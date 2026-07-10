@@ -9,19 +9,19 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
   <link rel="stylesheet" href="../assets/css/tools.css" />
 </head>
-<body data-page="formatter" data-root="..">
+<body class="tool-fit" data-page="formatter" data-root="..">
   <div id="sidebar-mount"></div>
-  <main class="main">
+  <main class="main main-fit">
     <header class="page-header">
       <h2>Event Formatter</h2>
       <p>Format messy event strings into clean supporter.json event objects.</p>
     </header>
     <section class="split-3">
-      <div class="panel" style="min-height: 560px;">
+      <div class="panel">
         <div class="panel-head">
           <div class="panel-dots">
             <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
-            <span class="label-caps" style="margin-left:0.5rem;color:var(--on-surface-variant);font-size:10px;">Messy event string</span>
+            <span class="panel-title" style="margin-left:0.5rem;">Messy event string</span>
           </div>
           <button class="btn-icon danger" id="clear-btn" title="Clear">
             <span class="material-symbols-outlined">delete_sweep</span>
@@ -45,10 +45,10 @@ Nakayama Festa bond +5"></textarea>
           <div class="line"></div>
         </div>
       </div>
-      <div class="panel" style="min-height: 560px;">
+      <div class="panel">
         <div class="panel-head">
           <div style="display:flex;align-items:center;gap:0.75rem;">
-            <span class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Proper JSON format</span>
+            <span class="panel-title">Proper JSON format</span>
             <span class="pill ok hidden" id="validation-pill"><span class="dot"></span> Valid JSON</span>
           </div>
           <div style="display:flex;gap:0.25rem;">
@@ -68,14 +68,10 @@ Nakayama Festa bond +5"></textarea>
     <div class="tip">
       <div class="tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
       <div>
-        <p class="label-caps" style="color:var(--primary);margin:0 0 0.25rem;">Quick tip</p>
-        <p style="margin:0;color:var(--on-surface-variant);">Use <span class="mono">(❯)</span> for chain events. Blank lines split multiple events. <span class="mono">(Top)</span>/<span class="mono">(Bottom)</span> become multiple results.</p>
+        <p class="label-caps" style="color:var(--primary);margin:0 0 0.2rem;">Quick tip</p>
+        <p style="margin:0;color:var(--on-surface-variant);font-size:0.95rem;">Use <span class="mono">(❯)</span> for chain events. Blank lines split multiple events. <span class="mono">(Top)</span>/<span class="mono">(Bottom)</span> become multiple results.</p>
       </div>
     </div>
-    <footer class="site-footer">
-      <span>© 2026 Toolkino Minoru</span>
-      <a href="../">Home</a>
-    </footer>
   </main>
   <script src="../assets/js/shared.js"></script>
   <script src="../assets/js/formatter.js"></script>

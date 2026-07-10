@@ -9,19 +9,19 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
   <link rel="stylesheet" href="../assets/css/tools.css" />
 </head>
-<body data-page="converter" data-root="..">
+<body class="tool-fit" data-page="converter" data-root="..">
   <div id="sidebar-mount"></div>
-  <main class="main">
+  <main class="main main-fit">
     <header class="page-header">
       <h2>Condition Converter</h2>
       <p>Convert raw skill condition codes into readable English using TazunaBot rules.</p>
     </header>
     <section class="split-3">
-      <div class="panel" style="min-height: 520px;">
+      <div class="panel">
         <div class="panel-head">
           <div class="panel-dots">
             <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
-            <span class="label-caps" style="margin-left:0.5rem;color:var(--on-surface-variant);font-size:10px;">Raw condition code</span>
+            <span class="panel-title" style="margin-left:0.5rem;">Raw condition code</span>
           </div>
           <button class="btn-icon danger" id="clear-btn" title="Clear">
             <span class="material-symbols-outlined">delete_sweep</span>
@@ -44,9 +44,9 @@
           <div class="line"></div>
         </div>
       </div>
-      <div class="panel" style="min-height: 520px;">
+      <div class="panel">
         <div class="panel-head">
-          <span class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">English output</span>
+          <span class="panel-title">English output</span>
           <button class="btn-icon" id="copy-btn" title="Copy">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
@@ -59,14 +59,10 @@
     <div class="tip">
       <div class="tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
       <div>
-        <p class="label-caps" style="color:var(--primary);margin:0 0 0.25rem;">Quick tip</p>
-        <p style="margin:0;color:var(--on-surface-variant);">Paste master DB conditions with <span class="mono">&</span> / newlines. Ctrl+Enter to convert. Rules live in <span class="mono">data/conditions.json</span>.</p>
+        <p class="label-caps" style="color:var(--primary);margin:0 0 0.2rem;">Quick tip</p>
+        <p style="margin:0;color:var(--on-surface-variant);font-size:0.95rem;">Paste master DB conditions with <span class="mono">&</span> / newlines. Ctrl+Enter to convert.</p>
       </div>
     </div>
-    <footer class="site-footer">
-      <span>© 2026 Toolkino Minoru</span>
-      <a href="../">Home</a>
-    </footer>
   </main>
   <script src="../assets/js/shared.js"></script>
   <script src="../assets/js/converter.js"></script>

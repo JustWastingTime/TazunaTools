@@ -169,6 +169,99 @@ button {
   max-width: calc(var(--sidebar-w) + 1440px);
 }
 
+/* Converter / Formatter: fill viewport, no page scroll */
+html:has(body.tool-fit) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body.tool-fit {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.main.main-fit {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  width: calc(100% - var(--sidebar-w));
+  padding: 1rem 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.main-fit .page-header {
+  margin-bottom: 0.75rem;
+  flex: 0 0 auto;
+}
+
+.main-fit .page-header h2 {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+}
+
+.main-fit .page-header p {
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.main-fit .split-3 {
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: stretch;
+  gap: 1rem;
+  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 1fr);
+}
+
+.main-fit .panel {
+  min-height: 0;
+  height: auto;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.main-fit .split-actions {
+  gap: 0.65rem;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.main-fit .btn-round {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.main-fit .format-rail .line {
+  height: 1.25rem;
+}
+
+.main-fit .tip {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  flex: 0 0 auto;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  gap: 0.75rem;
+}
+
+.main-fit .tip-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.main-fit .tip-icon .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.main-fit .site-footer {
+  display: none;
+}
+
 .page-header {
   margin-bottom: 2.5rem;
 }
@@ -201,21 +294,41 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface-container-low);
+  padding: 1.05rem 1.35rem;
+  min-height: 3.75rem;
+  background: var(--surface-container);
   border-bottom: 1px solid var(--outline-variant);
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.panel-title {
+  font-family: Geist, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  line-height: 1.25;
 }
 
 .panel-dots {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.panel-head .btn-icon .material-symbols-outlined {
+  font-size: 1.45rem;
 }
 
 .panel-dots span {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .dot-r { background: color-mix(in srgb, var(--error) 40%, transparent); }
@@ -226,25 +339,37 @@ button {
   flex: 1;
   min-height: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor,
 .output {
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 0;
+  flex: 1;
   margin: 0;
-  padding: 1.25rem 1.5rem;
+  padding: 1.35rem 1.5rem;
   background: var(--input-bg);
   border: none;
   outline: none;
   resize: none;
   color: var(--primary-fixed);
-  font-family: "Space Mono", monospace;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  white-space: pre-wrap;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre;
   overflow: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.main-fit .editor,
+.main-fit .output {
+  font-size: 1.3rem;
+  line-height: 1.7;
+  padding: 1.4rem 1.6rem;
 }
 
 .output {
@@ -256,7 +381,8 @@ button {
 }
 
 .editor::placeholder {
-  color: color-mix(in srgb, var(--outline-variant) 70%, transparent);
+  color: color-mix(in srgb, var(--outline-variant) 85%, var(--on-surface-variant));
+  opacity: 1;
 }
 
 .btn {
@@ -471,7 +597,7 @@ button {
   background: var(--primary-fixed-dim);
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 720px) {
   .split-3 {
     grid-template-columns: 1fr;
   }
@@ -484,25 +610,44 @@ button {
   .format-rail {
     display: none;
   }
+
+  .main-fit .split-3 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .main-fit .panel {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+  }
+
+  .main-fit .split-actions {
+    flex: 0 0 auto;
+  }
+
+  .main-fit .btn-round {
+    width: 3.75rem;
+    height: 3.75rem;
+  }
+
+  .main-fit .page-header p {
+    display: none;
+  }
+
+  .main-fit .tip p:not(.label-caps) {
+    font-size: 0.85rem;
+  }
 }
 
 @media (max-width: 900px) {
   :root { --sidebar-w: 4.5rem; }
 
+  .sidebar-brand,
   .sidebar-brand p,
   .nav-link span:not(.material-symbols-outlined) {
     display: none;
-  }
-
-  .sidebar-brand {
-    padding: 0 0.5rem 1.25rem;
-    text-align: center;
-  }
-
-  .sidebar-brand h1 {
-    font-size: 0.7rem;
-    line-height: 1.2;
-    word-break: break-word;
   }
 
   .nav-link {
@@ -512,6 +657,10 @@ button {
 
   .main {
     padding: 1.25rem;
+  }
+
+  .main.main-fit {
+    width: calc(100% - var(--sidebar-w));
   }
 }
 
