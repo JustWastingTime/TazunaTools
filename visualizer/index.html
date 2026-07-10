@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skill Visualizer · Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/tools.css" />
+</head>
+<body data-page="visualizer" data-root="..">
+  <div id="sidebar-mount"></div>
+  <main class="main">
+    <header class="page-header">
+      <h2>Skill Visualizer</h2>
+      <p>Check skill JSON against Champions Meeting maps or any course override.</p>
+    </header>
+    <div class="viz-toolbar">
+      <select class="select" id="cm-select" title="Champions Meeting"></select>
+      <select class="select" id="map-select" title="Map override"></select>
+      <input class="field" id="skill-search" placeholder="Search skills..." style="min-width:14rem;" />
+      <select class="select" id="skill-select"></select>
+    </div>
+    <div class="map-shell">
+      <div class="map-heading">
+        <h3 id="map-title">Course map</h3>
+        <div id="map-meta"></div>
+      </div>
+      <div id="map-host"><p class="muted">Loading maps…</p></div>
+    </div>
+    <div class="viz-grid">
+      <div class="card" id="skill-card">
+        <p class="muted">Select or paste a skill JSON to inspect.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--secondary);">Paste skill JSON</h3>
+        <p style="color:var(--on-surface-variant);font-size:0.9rem;">Override the dropdown with a raw skill object (useful for validating edits).</p>
+        <textarea class="field mono" id="skill-paste" rows="12" placeholder='{ "skill_name": "...", "activation_map": { ... } }'></textarea>
+        <button class="btn btn-primary" id="paste-apply" style="margin-top:0.75rem;width:100%;">
+          <span class="material-symbols-outlined">play_arrow</span> Apply JSON
+        </button>
+      </div>
+    </div>
+    <footer class="site-footer">
+      <span>© 2026 Toolkino Minoru</span>
+      <a href="../">Home</a>
+    </footer>
+  </main>
+  <script src="../assets/js/shared.js"></script>
+  <script src="../assets/js/course-map.js"></script>
+  <script src="../assets/js/visualizer.js"></script>
+</body>
+</html>

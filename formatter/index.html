@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Event Formatter · Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/tools.css" />
+</head>
+<body data-page="formatter" data-root="..">
+  <div id="sidebar-mount"></div>
+  <main class="main">
+    <header class="page-header">
+      <h2>Event Formatter</h2>
+      <p>Format messy event strings into clean supporter.json event objects.</p>
+    </header>
+    <section class="split-3">
+      <div class="panel" style="min-height: 560px;">
+        <div class="panel-head">
+          <div class="panel-dots">
+            <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
+            <span class="label-caps" style="margin-left:0.5rem;color:var(--on-surface-variant);font-size:10px;">Messy event string</span>
+          </div>
+          <button class="btn-icon danger" id="clear-btn" title="Clear">
+            <span class="material-symbols-outlined">delete_sweep</span>
+          </button>
+        </div>
+        <div class="panel-body">
+          <textarea class="editor" id="event-input" placeholder="(❯)
+All In
+Wit +10
+Skill points +20
+Nakayama Festa bond +5"></textarea>
+        </div>
+      </div>
+      <div class="split-actions">
+        <button class="btn-round" id="format-btn" title="Format">
+          <span class="material-symbols-outlined">auto_fix_high</span>
+        </button>
+        <div class="format-rail">
+          <div class="line"></div>
+          <span class="label-caps" style="font-size:11px;">Format</span>
+          <div class="line"></div>
+        </div>
+      </div>
+      <div class="panel" style="min-height: 560px;">
+        <div class="panel-head">
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <span class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Proper JSON format</span>
+            <span class="pill ok hidden" id="validation-pill"><span class="dot"></span> Valid JSON</span>
+          </div>
+          <div style="display:flex;gap:0.25rem;">
+            <button class="btn-icon" id="copy-btn" title="Copy">
+              <span class="material-symbols-outlined">content_copy</span>
+            </button>
+            <button class="btn-icon" id="download-btn" title="Download" disabled>
+              <span class="material-symbols-outlined">download</span>
+            </button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <pre class="output" id="json-output"><span class="muted">// Awaiting input...</span></pre>
+        </div>
+      </div>
+    </section>
+    <div class="tip">
+      <div class="tip-icon"><span class="material-symbols-outlined">lightbulb</span></div>
+      <div>
+        <p class="label-caps" style="color:var(--primary);margin:0 0 0.25rem;">Quick tip</p>
+        <p style="margin:0;color:var(--on-surface-variant);">Use <span class="mono">(❯)</span> for chain events. Blank lines split multiple events. <span class="mono">(Top)</span>/<span class="mono">(Bottom)</span> become multiple results.</p>
+      </div>
+    </div>
+    <footer class="site-footer">
+      <span>© 2026 Toolkino Minoru</span>
+      <a href="../">Home</a>
+    </footer>
+  </main>
+  <script src="../assets/js/shared.js"></script>
+  <script src="../assets/js/formatter.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => Toolkino.mountShell("formatter"));</script>
+</body>
+</html>

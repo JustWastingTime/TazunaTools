@@ -1,0 +1,291 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&amp;family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb595",
+                    "primary-fixed": "#6bfe9c",
+                    "secondary": "#ffb961",
+                    "on-secondary": "#472a00",
+                    "surface-container": "#1f1f23",
+                    "on-primary-fixed": "#00210c",
+                    "primary": "#54e98a",
+                    "on-secondary-container": "#563400",
+                    "background": "#121316",
+                    "inverse-on-surface": "#2f3033",
+                    "on-secondary-fixed": "#2b1700",
+                    "surface-container-low": "#1a1b1e",
+                    "error-container": "#93000a",
+                    "surface-dim": "#121316",
+                    "on-primary-fixed-variant": "#005228",
+                    "on-surface": "#e3e2e6",
+                    "inverse-primary": "#006d37",
+                    "on-tertiary": "#571e00",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-container": "#005027",
+                    "on-secondary-fixed-variant": "#663e00",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#ffdbcd",
+                    "surface-container-lowest": "#0d0e11",
+                    "inverse-surface": "#e3e2e6",
+                    "on-background": "#e3e2e6",
+                    "on-surface-variant": "#bbcbbb",
+                    "on-error": "#690005",
+                    "surface-container-highest": "#343538",
+                    "on-primary": "#003919",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "on-tertiary-fixed": "#351000",
+                    "surface-bright": "#38393c",
+                    "surface": "#121316",
+                    "tertiary-container": "#ff996a",
+                    "outline-variant": "#3d4a3e",
+                    "on-tertiary-container": "#792d00",
+                    "tertiary": "#ffc1a6",
+                    "surface-tint": "#4ae183",
+                    "surface-variant": "#343538",
+                    "secondary-container": "#e89300",
+                    "outline": "#869486",
+                    "primary-container": "#2ecc71",
+                    "surface-container-high": "#292a2d",
+                    "primary-fixed-dim": "#4ae183",
+                    "secondary-fixed": "#ffddb9",
+                    "secondary-fixed-dim": "#ffb961"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "container-max": "1440px",
+                    "gutter": "16px",
+                    "margin-desktop": "32px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "body-md": ["Geist"],
+                    "data-mono": ["Space Mono"],
+                    "headline-lg-mobile": ["Geist"],
+                    "headline-md": ["Geist"],
+                    "body-lg": ["Geist"],
+                    "headline-lg": ["Geist"],
+                    "label-caps": ["Space Mono"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "38px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    }catch(_e){}</script></head><body class="h-screen flex overflow-hidden">
+<!-- SideNavBar (Updated to match SCREEN_5 structure) -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant z-50 flex flex-col py-4">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md text-primary font-bold">Toolkino Minoru</h1>
+<p class="font-label-caps text-[10px] text-on-surface-variant tracking-widest mt-1 uppercase">Personal tools for tazunabot</p>
+</div>
+<nav class="flex flex-col flex-1 space-y-2 px-2">
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg px-4 py-3 mx-2 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">translate</span>
+<span class="font-label-caps text-label-caps">Converter</span>
+</a>
+<!-- Active Tab: Cropper -->
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">crop</span>
+<span class="font-label-caps text-label-caps">Cropper</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg px-4 py-3 mx-2 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">code</span>
+<span class="font-label-caps text-label-caps">Event Formatter</span>
+</a>
+<div class="pt-4 pb-2 px-6">
+
+</div>
+</nav>
+<footer class="mt-auto px-2 space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg px-4 py-2 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined text-sm">description</span>
+<span class="font-label-caps text-[10px]">Documentation</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg px-4 py-2 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined text-sm">forum</span>
+<span class="font-label-caps text-[10px]">Feedback</span>
+</a>
+</footer>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 flex flex-col h-full bg-background relative">
+<!-- Top Toolbar / Header -->
+<header class="mb-10 z-10 flex justify-between items-end px-margin-desktop">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Image Quiz Cropper</h2>
+<p class="text-on-surface-variant font-body-md mt-2">Extract and optimize visual assets for quiz generation and event formatting.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-end">
+</div>
+</div>
+</header>
+<!-- Editor Layout Grid -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Workspace Content -->
+<div class="flex-1 flex flex-col p-6 overflow-hidden">
+<!-- Upload Zone / Context Info -->
+<div class="mb-4 flex items-center justify-between bg-surface-container rounded-lg p-4 industrial-border">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-highest rounded industrial-border flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">image</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-bold">race_finish_line_001.jpg</p>
+<p class="font-data-mono text-xs text-on-surface-variant">3840 x 2160 • 4.2 MB • JPG</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+<span class="font-data-mono text-[10px] text-primary">SCALE: 25%</span>
+</div>
+<div class="px-3 py-1 bg-surface-container-highest rounded-full border border-outline-variant">
+<span class="font-data-mono text-[10px] text-on-surface-variant">UPLOAD</span>
+</div>
+</div>
+</div>
+<!-- Main Cropping Workspace -->
+<div class="flex-1 bg-surface-container-low rounded-xl industrial-border relative overflow-hidden flex items-center justify-center group">
+<!-- Grid Pattern Background -->
+<div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#54e98a 1px, transparent 1px); background-size: 20px 20px;"></div>
+<!-- Editor Canvas -->
+<div class="relative w-4/5 aspect-video bg-surface-container-highest industrial-border shadow-2xl overflow-hidden cursor-crosshair" id="canvas">
+<img class="w-full h-full object-cover opacity-60" data-alt="A high-resolution, wide-angle cinematic shot of a futuristic horse racing track finish line at night. The scene is filled with vibrant neon green and cyan lighting, reflecting off the sleek, polished track surface. Crowds in the background are blurred, creating a high-energy, high-performance sports atmosphere. The overall style is modern industrial with deep blacks and sharp saturated highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcpH0QEoUDQuvh6VTTuY6i3uafd3-2j-yhwJnmU-pMyju4cqyWn1l76khczVjs4fTlKUfx8nbsmO5Dw0ZsW-E3XwYy3AWeJIeHnPBQpLbHBiDy5m2eDJixIMdshDrEfOQp9vP8vTmK9M4cJGIWq4m98z0FWutJRJvX7pMHra6PyWuKZgjAjRmWrmS2nOydaZncf0Qnfp14x0-ijGEt0V96n8UKn5KczFV3SRWCEZKZVD0lAQb2iNBf">
+<!-- Sample Crop Areas -->
+<div class="crop-area active-glow" style="top: 15%; left: 10%; width: 25%; height: 40%;">
+<div class="absolute -top-6 left-0 bg-primary text-black px-2 py-0.5 font-data-mono text-[10px] font-bold">CROP_01 (1080p)</div>
+<!-- Handles -->
+<div class="crop-handle -top-1 -left-1"></div>
+<div class="crop-handle -top-1 -right-1"></div>
+<div class="crop-handle -bottom-1 -left-1"></div>
+<div class="crop-handle -bottom-1 -right-1"></div>
+</div>
+<div class="crop-area" style="top: 55%; left: 45%; width: 20%; height: 20%;">
+<div class="absolute -top-6 left-0 bg-surface-container-highest text-on-surface border border-outline-variant px-2 py-0.5 font-data-mono text-[10px]">CROP_02</div>
+<div class="crop-handle -top-1 -left-1"></div>
+<div class="crop-handle -top-1 -right-1"></div>
+<div class="crop-handle -bottom-1 -left-1"></div>
+<div class="crop-handle -bottom-1 -right-1"></div>
+</div>
+</div>
+<!-- Floating Tool Overlay -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-surface-container-highest/90 backdrop-blur-md p-1.5 rounded-full industrial-border shadow-xl">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/20 text-on-surface hover:text-primary transition-all">
+<span class="material-symbols-outlined">near_me</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-black shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">crop</span>
+</button>
+<div class="w-[1px] h-6 bg-outline-variant mx-1"></div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-bright text-on-surface transition-all">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-bright text-on-surface transition-all">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Crop Queue -->
+<aside class="w-80 border-l border-outline-variant bg-surface-container-low flex flex-col">
+
+<!-- Queue Items -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+<!-- Item 1 -->
+<div class="p-3 bg-surface-container-highest rounded industrial-border active-glow transition-all cursor-pointer">
+<div class="aspect-video bg-background mb-3 rounded overflow-hidden relative group">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="A focused close-up crop of a racing horse's eye reflecting the bright stadium lights. The style is hyper-detailed and cinematic, with high contrast and dark moody tones. The lighting emphasizes the intensity and energy of the sports competition, fitting a premium digital tool aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjXZBe0bxJ376vUzo3e9MkBLdULdeWN92EqopCuOET_60T6MehZ28pPNRr1QS5UrixdIKHH5B9jIK5m-DQcBWp3Je13-5a-3hhqXOQUPnXzQpJ19XfgANboqJ62xUeqvuy65OoQ8pb09uFbpgHHSKMheQbMaFDF2zYbqdHZuTvT8IqYtQG_aF3N1HX6G6rnXmL_R_9M-4Di7DB_akQEHn6I_86G0FdyB2YsZB9Dbabzd3DUCNyrCxj">
+<div class="absolute inset-0 border-2 border-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="font-body-md text-sm font-bold text-on-surface">CROP_01_ZOOM</p>
+<p class="font-data-mono text-[10px] text-on-surface-variant">1080x1080 • 1:1</p>
+</div>
+<span class="material-symbols-outlined text-on-error hover:text-error cursor-pointer">delete</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-3 bg-surface-container rounded industrial-border border-dashed border-outline-variant opacity-60 hover:opacity-100 transition-all cursor-pointer">
+<div class="aspect-video bg-background mb-3 rounded overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A detailed crop of a futuristic scoreboard displaying racing statistics in a neon-lit sports arena. The text and numbers are rendered in a high-tech monospaced font. The lighting is cool-toned with cyan and white highlights against a deep navy background, maintaining a technical and analytical feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeldL-E93YTgVUbz7EpFo4BQCvZ7ChTQFFnAGSqOuK-5lEZhPGIgOsJT4mrQA3rmWOIMYJDhIP7MNNjQ9SWdc-0WqbqBNAnzEkKVleXJt0z_Jy_IfvR6EJ1JK5kX97J31nEnGMdSafJ86wX9Y2A48oVe8t97lBVcPDlln4ikFVymE8TWn62MTDC05zh6HDs-D4pxoSzh9TFfGoEJ8dmtZqY6mX0AVq-CftpmN1tF7LS9sV39FckTpB">
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="font-body-md text-sm font-bold text-on-surface">CROP_02_STATS</p>
+<p class="font-data-mono text-[10px] text-on-surface-variant">720x480 • 3:2</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-error cursor-pointer">delete</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-3 bg-surface-container rounded industrial-border border-dashed border-outline-variant opacity-60 hover:opacity-100 transition-all cursor-pointer">
+<div class="aspect-video bg-background mb-3 rounded overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A cinematic wide-angle crop of a horse racing starting gate, illuminated by powerful overhead spotlights that create dramatic shadows. The metal texture of the gate is sharp and industrial. The background is a dark, atmospheric sports arena at night, emphasizing the moments before high-speed action." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOcfEqxa7382HsL0KoM8h68A5MH0AsZNjpTbnKJmoHh-vIKDdTVHO89Yo3qpJsPMnuFb3RP40KG1T-4ABAMoHZdtwnjMA7bxrpDB7nMZN72evbzDZUNCR1-zz_UJx0ctKRUgxF0f5xV7T4mpgC6NGuNHQhDIxFXoCCedAKsCf9Q4g6Xnhnsa_sGBG0-u7vqFqeFiBFpmFB25i3pZsw-84b2eOEMCCamy_PPCkU_y4_5HNFxQLTbia_">
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="font-body-md text-sm font-bold text-on-surface">CROP_03_START</p>
+<p class="font-data-mono text-[10px] text-on-surface-variant">1920x1080 • 16:9</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-error cursor-pointer">delete</span>
+</div>
+</div>
+</div>
+<!-- Footer Action Area -->
+<div class="p-6 bg-surface-container-lowest border-t border-outline-variant">
+<button class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-label-caps py-4 rounded-lg flex items-center justify-center gap-3 transition-all duration-300 group glow-hover">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">auto_awesome</span>
+<span class="text-sm font-bold">Generate Assets</span>
+</button>
+<p class="text-center mt-3 font-data-mono text-[9px] text-on-surface-variant tracking-wider">EST. PROCESSING TIME: 1.4s</p>
+</div>
+</aside>
+</div>
+<!-- Micro-footer -->
+<footer class="mt-20 border-t border-outline-variant py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-on-surface-variant px-margin-desktop">
+<span class="font-data-mono text-[11px]">© 2026 Umamusume Dev Tools. For research purposes only.</span>
+<div class="flex gap-8 font-data-mono text-[11px]">
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms</a>
+<a class="hover:text-primary transition-colors" href="#">GitHub</a>
+</div>
+</footer>
+</main>
+<script class="">
+        // Simple Interaction logic for crop areas
+        const canvas = document.getElementById('canvas');
+        const cropAreas = document.querySelectorAll('.crop-area');
+
+        cropAreas.forEach(area => {
+            area.addEventListener('mousedown', (e) => {
+                // Deactivate all
+                cropAreas.forEach(a => a.classList.remove('active-glow'));
+                // Activate clicked
+                area.classList.add('active-glow');
+            });
+        });
+
+        // Toggle focus state on canvas click
+        canvas.addEventListener('click', (e) => {
+            if (e.target === canvas || e.target.tagName === 'IMG') {
+                cropAreas.forEach(a => a.classList.remove('active-glow'));
+            }
+        });
+    </script>
+</body></html>

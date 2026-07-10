@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="stylesheet" href="assets/css/tools.css" />
+</head>
+<body data-page="home" data-root=".">
+  <div id="sidebar-mount"></div>
+  <main class="main">
+    <header class="page-header">
+      <h2>Toolkino Minoru</h2>
+      <p>Personal utility suite for TazunaBot — condition conversion, events, crops, wheels, and skill maps.</p>
+    </header>
+    <section class="hub-grid">
+      <a class="hub-card" href="converter/">
+        <h3>Condition Converter</h3>
+        <p>Translate raw skill condition codes into readable English.</p>
+      </a>
+      <a class="hub-card" href="formatter/">
+        <h3>Event Formatter</h3>
+        <p>Turn messy event text into supporter.json event objects.</p>
+      </a>
+      <a class="hub-card" href="cropper/">
+        <h3>Image Quiz Cropper</h3>
+        <p>Crop quiz images with medium / hard / expert presets and export JSON.</p>
+      </a>
+      <a class="hub-card" href="wheelspin/">
+        <h3>Wheelspin</h3>
+        <p>Randomize racecourses, tracks, umas — with elimination mode.</p>
+      </a>
+      <a class="hub-card" href="visualizer/">
+        <h3>Skill Visualizer</h3>
+        <p>Preview skill activation maps against CM or custom courses.</p>
+      </a>
+    </section>
+    <footer class="site-footer">
+      <span>© 2026 Toolkino Minoru · Local name: TazunaTools</span>
+      <span>GitHub Pages ready</span>
+    </footer>
+  </main>
+  <script src="assets/js/shared.js"></script>
+  <script>
+    // Home uses "." root; rewrite nav hrefs without ../
+    document.addEventListener("DOMContentLoaded", () => {
+      const mount = document.getElementById("sidebar-mount");
+      mount.outerHTML = Toolkino.renderSidebar("");
+    });
+  </script>
+</body>
+</html>

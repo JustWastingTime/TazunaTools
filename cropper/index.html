@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Quiz Cropper · Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/tools.css" />
+</head>
+<body data-page="cropper" data-root="..">
+  <div id="sidebar-mount"></div>
+  <main class="main">
+    <header class="page-header">
+      <h2>Image Quiz Cropper</h2>
+      <p>Upload an image, place preset crop boxes, export PNGs + umaguesser JSON.</p>
+    </header>
+    <div class="cropper-layout">
+      <div class="crop-workspace" id="workspace">
+        <div class="crop-toolbar">
+          <div>
+            <strong id="file-meta">No image loaded</strong>
+            <p class="mono muted" style="margin:0.2rem 0 0;font-size:11px;font-style:normal;">Drag boxes to reposition · presets lock size</p>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+            <select class="select" id="preset-select" style="width:auto;">
+              <option value="medium">Medium 320²</option>
+              <option value="hard" selected>Hard 220²</option>
+              <option value="expert">Expert 140²</option>
+              <option value="free">Free size</option>
+            </select>
+            <button class="btn btn-ghost" id="add-box">
+              <span class="material-symbols-outlined">crop</span> Add box
+            </button>
+            <label class="btn btn-primary">
+              <span class="material-symbols-outlined">upload</span> Upload
+              <input type="file" id="file-input" accept="image/*" hidden />
+            </label>
+          </div>
+        </div>
+        <div class="crop-stage">
+          <div class="drop-zone" id="drop-zone">
+            <span class="material-symbols-outlined" style="font-size:3rem;color:var(--primary);">image</span>
+            <p>Drop an image here or use Upload</p>
+          </div>
+          <canvas id="crop-canvas" class="hidden"></canvas>
+        </div>
+      </div>
+      <aside class="crop-side">
+        <div class="panel-head">
+          <span class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Crop queue</span>
+        </div>
+        <div class="crop-side-body">
+          <label class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Prompt</label>
+          <input class="field" id="prompt-input" value="Who's that uma? It's ..." />
+          <label class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Answers (comma / newline)</label>
+          <textarea class="field" id="answers-input" rows="3" placeholder="Special Week, Spe, $uma"></textarea>
+          <div id="crop-queue"></div>
+        </div>
+        <div class="crop-side-foot">
+          <button class="btn btn-primary" id="export-btn" style="width:100%;">
+            <span class="material-symbols-outlined">auto_awesome</span> Generate assets
+          </button>
+          <p class="mono muted" id="export-status" style="text-align:center;margin:0.6rem 0 0;font-size:10px;font-style:normal;">PNG downloads + quiz JSON</p>
+          <pre id="quiz-json" class="mono">// Quiz JSON preview</pre>
+        </div>
+      </aside>
+    </div>
+    <footer class="site-footer">
+      <span>© 2026 Toolkino Minoru</span>
+      <a href="../">Home</a>
+    </footer>
+  </main>
+  <script src="../assets/js/shared.js"></script>
+  <script src="../assets/js/cropper.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => Toolkino.mountShell("cropper"));</script>
+</body>
+</html>

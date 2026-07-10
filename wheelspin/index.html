@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wheelspin · Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/tools.css" />
+</head>
+<body data-page="wheelspin" data-root="..">
+  <div id="sidebar-mount"></div>
+  <main class="main">
+    <header class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <h2 style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <span>Wheelspin</span>
+          <span style="opacity:0.35;">|</span>
+          <select class="select" id="wheel-preset" style="width:auto;font-size:1.1rem;background:transparent;border:none;padding:0;">
+            <option value="racecourse">Racecourse</option>
+            <option value="track">Track / Map</option>
+            <option value="uma">Uma</option>
+            <option value="custom">Custom</option>
+          </select>
+        </h2>
+        <p>Randomized selection for race parameters and entries.</p>
+      </div>
+    </header>
+    <div class="wheel-grid">
+      <div>
+        <div class="panel wheel-panel">
+          <div class="wheel-pointer">
+            <span class="material-symbols-outlined" style="font-size:2.75rem;">arrow_drop_down</span>
+          </div>
+          <canvas id="wheel-canvas" width="520" height="520"></canvas>
+          <button class="btn btn-primary" id="spin-button" style="width:min(100%,22rem);border-radius:999px;padding:1rem;letter-spacing:0.15em;text-transform:uppercase;">
+            Spin the wheel
+          </button>
+          <div id="winner-display" class="hidden" style="text-align:center;">
+            <div class="label-caps" style="color:var(--on-surface-variant);margin-bottom:0.4rem;">Selected result</div>
+            <div class="card" style="display:inline-block;border-color:color-mix(in srgb,var(--primary) 30%,transparent);background:color-mix(in srgb,var(--primary) 10%,transparent);">
+              <strong id="winner-text" style="font-size:1.75rem;color:var(--primary);">--</strong>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row" style="margin-top:1rem;">
+          <div class="card stat-card"><span class="label-caps">Last spin</span><strong id="last-spin">--</strong></div>
+          <div class="card stat-card"><span class="label-caps">Total spins</span><strong id="total-spins">0</strong></div>
+          <div class="card stat-card"><span class="label-caps">Chance</span><strong><span id="odds-percent">10.0</span>%</strong></div>
+        </div>
+      </div>
+      <div class="panel customize-panel">
+        <div class="panel-head" style="flex-direction:column;align-items:stretch;gap:0.75rem;">
+          <div>
+            <h3 style="margin:0;color:var(--primary);">Customize</h3>
+            <p style="margin:0.25rem 0 0;color:var(--on-surface-variant);font-size:0.9rem;">Edit pool entries for the current wheel</p>
+          </div>
+          <label class="toggle-row">
+            <span class="label-caps" style="color:var(--on-surface-variant);">Elimination mode</span>
+            <input type="checkbox" id="elimination-toggle" />
+          </label>
+          <div id="eliminated-wrap" class="hidden">
+            <div class="label-caps" style="color:var(--on-surface-variant);margin-bottom:0.4rem;font-size:10px;">Eliminated</div>
+            <div id="eliminated-list"></div>
+          </div>
+        </div>
+        <div class="panel-body" id="entry-list"></div>
+        <div style="padding:1rem;border-top:1px solid var(--outline-variant);display:flex;flex-direction:column;gap:0.75rem;">
+          <div style="display:flex;gap:0.5rem;">
+            <input class="field" id="new-entry-name" placeholder="Type new entry..." />
+            <button class="btn btn-ghost" id="add-entry" style="width:3.25rem;padding:0;">
+              <span class="material-symbols-outlined">add</span>
+            </button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <button class="btn btn-ghost" id="reset-wheel">Reset defaults</button>
+            <button class="btn btn-ghost" id="clear-wheel" style="color:var(--error);border-color:color-mix(in srgb,var(--error) 35%,transparent);">Clear all</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="site-footer">
+      <span>© 2026 Toolkino Minoru</span>
+      <a href="../">Home</a>
+    </footer>
+  </main>
+  <script src="../assets/js/shared.js"></script>
+  <script src="../assets/js/wheelspin.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => Toolkino.mountShell("wheelspin"));</script>
+</body>
+</html>
