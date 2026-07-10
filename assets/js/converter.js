@@ -1,8 +1,11 @@
 /** Condition code → English converter */
 (function () {
   let RULES = null;
+  let FIELD_RANK = new Map();
 
   const OP_RE = /(>=|<=|==|!=|>|<)/;
+  const CM_FIELD = 9;
+  const TT_FIELD = 12;
 
   function normalizeOps(text) {
     return String(text || "")
@@ -49,13 +52,16 @@
     return t;
   }
 
+  function fieldRank(field) {
+    if (!field) return 9000;
+    if (FIELD_RANK.has(field)) return FIELD_RANK.get(field);
+    return 8000;
+  }
+
   function phaseLabel(value) {
     const map = RULES.fields.phase.values;
     return map[String(value)] || `phase ${value}`;
   }
-
-  const CM_FIELD = 9;
-  const TT_FIELD = 12;
 
   function ordinal(n) {
     const num = Number(n);
@@ -69,7 +75,6 @@
     }
   }
 
-  /** Convert a placement op/value into "5th to 9th" style text for a given field size. */
   function positionRange(op, value, fieldSize) {
     const n = Number(value);
     if (!Number.isFinite(n)) return null;
@@ -99,11 +104,6 @@
     return `${ordinal(start)} to ${ordinal(end)}`;
   }
 
-  /**
-   * Pull CM / LoH|TT placement hints out of the raw input.
-   * e.g. "(CM >= 5 | LoH >= 6)" → { cm: {op:'>=', value:5}, tt: {op:'>=', value:6} }
-   * CM is out of 9, LoH/TT is out of 12.
-   */
   function extractPlacementHints(raw) {
     const text = normalizeOps(raw);
     const patterns = [
@@ -155,7 +155,6 @@
       if (def.special === "order_rate") {
         const note = RULES.order_rate_notes?.[op]?.[String(value)];
         if (note) return note;
-        // Derive from percentage when no CM/TT hint is present
         const rate = Number(value);
         if (Number.isFinite(rate)) {
           const cmThreshold = Math.max(1, Math.ceil((rate / 100) * CM_FIELD));
@@ -210,74 +209,116 @@
     return `${field} ${op} ${value}`;
   }
 
-  function parseAtom(raw, placementHints) {
+  function parseAtomRaw(raw) {
     const text = stripParens(raw);
-    if (!text) return "";
+    if (!text) return null;
 
-    // Bare flag
     if (!OP_RE.test(text) && RULES.fields[text]) {
-      const def = RULES.fields[text];
-      return def.bare || def.values?.["1"] || text;
+      return { field: text, op: null, value: null, raw: text };
     }
 
     const m = text.match(/^([a-zA-Z0-9_]+)\s*(>=|<=|==|!=|>|<)\s*(-?\d+(?:\.\d+)?)$/);
-    if (!m) return text;
-    return formatField(m[1], m[2], m[3], placementHints);
+    if (!m) return { field: null, op: null, value: null, raw: text };
+    return { field: m[1], op: m[2], value: m[3], raw: text };
+  }
+
+  function entryFromAtom(raw, placementHints) {
+    const parsed = parseAtomRaw(raw);
+    if (!parsed) return null;
+    const text =
+      parsed.field != null
+        ? formatField(parsed.field, parsed.op, parsed.value, placementHints)
+        : parsed.raw;
+    if (!text) return null;
+    return {
+      field: parsed.field,
+      text,
+      rank: fieldRank(parsed.field),
+    };
   }
 
   function tryCompounds(atoms) {
-    // atoms: array of raw atom strings (no joiners)
     for (const compound of RULES.compounds || []) {
       const needed = compound.match.map((x) => x.replace(/\s+/g, ""));
       const normalized = atoms.map((a) => a.replace(/\s+/g, ""));
       if (needed.every((n) => normalized.includes(n))) {
-        return compound.text;
+        return compound;
       }
     }
     return null;
   }
 
   function translateExpr(expr, placementHints) {
-    const cleaned = stripParens(normalizeOps(expr).replace(/\n+/g, "&").replace(/\s+/g, "").replace(/&+/g, "&"));
+    const cleaned = stripParens(
+      normalizeOps(expr).replace(/\n+/g, "&").replace(/\s+/g, "").replace(/&+/g, "&")
+    );
     if (!cleaned) return [];
 
-    // Split on & first (AND), then @ and | (OR) inside groups
     const andParts = splitTopLevel(cleaned, ["&"]);
-    const lines = [];
-
-    // Compound detection on flat AND list when no OR groups
     const flatAtoms = andParts.map((p) => stripParens(p.text));
     const hasOr = flatAtoms.some((a) => a.includes("@") || a.includes("|") || a.includes("("));
+
     if (!hasOr) {
       const compound = tryCompounds(flatAtoms);
       if (compound && flatAtoms.length === 2) {
-        return [compound];
+        return [
+          {
+            field: "is_finalcorner",
+            text: compound.text,
+            rank: fieldRank("is_finalcorner"),
+          },
+        ];
       }
     }
 
+    const entries = [];
     for (const part of andParts) {
       const chunk = stripParens(part.text);
       if (chunk.includes("@") || chunk.includes("|") || (chunk.includes("(") && chunk.includes(")"))) {
         const orParts = splitTopLevel(chunk, ["@", "|"]);
         if (orParts.length > 1) {
-          const translated = orParts.map((p) => parseAtom(p.text, placementHints));
-          lines.push(translated.join(" OR "));
+          const parsed = orParts.map((p) => entryFromAtom(p.text, placementHints)).filter(Boolean);
+          if (!parsed.length) continue;
+          const rank = Math.min(...parsed.map((p) => p.rank));
+          entries.push({
+            field: parsed[0].field,
+            text: parsed.map((p) => p.text).join(" OR "),
+            rank,
+          });
           continue;
         }
       }
-      lines.push(parseAtom(chunk, placementHints));
+      const entry = entryFromAtom(chunk, placementHints);
+      if (entry) entries.push(entry);
     }
 
     // Upgrade final corner compounds when both present as separate lines
-    const idxFinal = lines.findIndex((l) => l === "Final corner and beyond");
-    const idxCorner = lines.findIndex((l) => l === "Any corner" || l === "Not a corner");
+    const idxFinal = entries.findIndex((e) => e.text === "Final corner and beyond");
+    const idxCorner = entries.findIndex((e) => e.text === "Any corner" || e.text === "Not a corner");
     if (idxFinal >= 0 && idxCorner >= 0) {
-      const cornerLine = lines[idxCorner];
-      lines[idxFinal] = cornerLine === "Not a corner" ? "Final non-corner" : "Final corner";
-      lines.splice(idxCorner, 1);
+      const cornerLine = entries[idxCorner].text;
+      entries[idxFinal].text = cornerLine === "Not a corner" ? "Final non-corner" : "Final corner";
+      entries[idxFinal].field = "is_finalcorner";
+      entries[idxFinal].rank = fieldRank("is_finalcorner");
+      entries.splice(idxCorner, 1);
     }
 
-    return lines.filter(Boolean);
+    return entries;
+  }
+
+  function sortEntries(entries) {
+    return [...entries].sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      return String(a.text).localeCompare(String(b.text));
+    });
+  }
+
+  function formatOutput(entries) {
+    const lines = sortEntries(entries).map((e) => e.text).filter(Boolean);
+    if (!lines.length) return { lines: [], text: "" };
+    // skill.json style: quoted strings with trailing commas
+    const text = lines.map((l) => `${JSON.stringify(l)},`).join("\n");
+    return { lines, text };
   }
 
   function convert(input) {
@@ -291,21 +332,20 @@
     const blocks = code.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
     if (blocks.length <= 1) {
       const joined = code.replace(/\n/g, "&").replace(/&+/g, "&");
-      const lines = translateExpr(joined, hints);
-      return { lines, text: lines.map((l) => `• ${l}`).join("\n") };
+      return formatOutput(translateExpr(joined, hints));
     }
 
-    const all = [];
-    blocks.forEach((block, i) => {
-      const lines = translateExpr(block.replace(/\n/g, "&").replace(/&+/g, "&"), hints);
-      if (blocks.length > 1) all.push(`Block ${i + 1}`);
-      lines.forEach((l) => all.push(`• ${l}`));
+    const allEntries = [];
+    blocks.forEach((block) => {
+      allEntries.push(...translateExpr(block.replace(/\n/g, "&").replace(/&+/g, "&"), hints));
     });
-    return { lines: all, text: all.join("\n") };
+    return formatOutput(allEntries);
   }
 
   async function init() {
     RULES = await Toolkino.loadJson("conditions.json");
+    FIELD_RANK = new Map((RULES.fieldOrder || []).map((name, i) => [name, i]));
+
     const input = document.getElementById("condition-input");
     const output = document.getElementById("condition-output");
     const convertBtn = document.getElementById("convert-btn");
