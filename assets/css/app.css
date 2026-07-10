@@ -209,8 +209,11 @@ body.tool-fit {
 }
 
 .main-fit .split-3 {
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 0 1 auto;
+  width: 100%;
+  height: min(480px, calc(100dvh - 14rem));
+  max-height: min(480px, calc(100dvh - 14rem));
+  min-height: 320px;
   align-items: stretch;
   gap: 1rem;
   overflow: hidden;
@@ -219,7 +222,7 @@ body.tool-fit {
 
 .main-fit .panel {
   min-height: 0;
-  height: auto;
+  height: 100%;
   max-height: 100%;
   overflow: hidden;
 }
@@ -304,12 +307,13 @@ body.tool-fit {
 
 .panel-title {
   font-family: Geist, system-ui, sans-serif;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--on-surface-variant);
-  line-height: 1.25;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .panel-dots {
@@ -615,6 +619,8 @@ body.tool-fit {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    height: min(640px, calc(100dvh - 12rem));
+    max-height: min(640px, calc(100dvh - 12rem));
   }
 
   .main-fit .panel {
