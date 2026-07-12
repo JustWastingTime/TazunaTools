@@ -175,6 +175,7 @@
 
     if (field === "phase") {
       if (op === ">=") return `${phaseLabel(value)} and beyond`;
+      if (op === "<=" && String(value) === "1") return "Early race or mid race";
       if (op === "<=") return `Up to ${phaseLabel(value)}`;
       if (op === "==") return phaseLabel(value);
       if (op === "!=") return `Not ${phaseLabel(value)}`;
