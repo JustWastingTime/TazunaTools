@@ -106,39 +106,92 @@
 
   function extractPlacementHints(raw) {
     const text = normalizeOps(raw);
+    const constraints = [];
     const patterns = [
       {
         re: /\(\s*CM\s*(>=|<=|==|!=|>|<)\s*(-?\d+)\s*\|\s*(?:LoH|LOH|TT)\s*(>=|<=|==|!=|>|<)\s*(-?\d+)\s*\)/gi,
-        map: (cmOp, cmVal, ttOp, ttVal) => ({
-          cm: { op: cmOp, value: Number(cmVal) },
-          tt: { op: ttOp, value: Number(ttVal) },
-        }),
+        map: (cmOp, cmVal, ttOp, ttVal) => {
+          constraints.push({ side: "cm", op: cmOp, value: Number(cmVal) });
+          constraints.push({ side: "tt", op: ttOp, value: Number(ttVal) });
+        },
       },
       {
         re: /\(\s*(?:LoH|LOH|TT)\s*(>=|<=|==|!=|>|<)\s*(-?\d+)\s*\|\s*CM\s*(>=|<=|==|!=|>|<)\s*(-?\d+)\s*\)/gi,
-        map: (ttOp, ttVal, cmOp, cmVal) => ({
-          cm: { op: cmOp, value: Number(cmVal) },
-          tt: { op: ttOp, value: Number(ttVal) },
-        }),
+        map: (ttOp, ttVal, cmOp, cmVal) => {
+          constraints.push({ side: "tt", op: ttOp, value: Number(ttVal) });
+          constraints.push({ side: "cm", op: cmOp, value: Number(cmVal) });
+        },
       },
     ];
 
-    let hints = null;
     let cleaned = text;
     for (const { re, map } of patterns) {
       cleaned = cleaned.replace(re, (...args) => {
-        hints = map(args[1], args[2], args[3], args[4]);
+        map(args[1], args[2], args[3], args[4]);
         return "";
       });
-      if (hints) break;
     }
-    return { hints, cleaned };
+
+    const merged = mergePlacementConstraints(constraints);
+    return { hints: merged, cleaned, constraints };
+  }
+
+  function applyPlacementBound(bounds, op, value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return;
+    if (op === ">=") bounds.start = Math.max(bounds.start, n);
+    else if (op === ">") bounds.start = Math.max(bounds.start, n + 1);
+    else if (op === "<=") bounds.end = Math.min(bounds.end, n);
+    else if (op === "<") bounds.end = Math.min(bounds.end, n - 1);
+    else if (op === "==") {
+      bounds.start = n;
+      bounds.end = n;
+    }
+  }
+
+  function mergePlacementConstraints(constraints) {
+    if (!constraints?.length) return null;
+    const cm = { start: 1, end: CM_FIELD };
+    const tt = { start: 1, end: TT_FIELD };
+    let hasCm = false;
+    let hasTt = false;
+    for (const c of constraints) {
+      if (c.side === "cm") {
+        applyPlacementBound(cm, c.op, c.value);
+        hasCm = true;
+      } else if (c.side === "tt") {
+        applyPlacementBound(tt, c.op, c.value);
+        hasTt = true;
+      }
+    }
+    if (!hasCm && !hasTt) return null;
+    return {
+      cm: hasCm ? cm : null,
+      tt: hasTt ? tt : null,
+    };
+  }
+
+  function formatBoundsRange(bounds, fieldSize) {
+    if (!bounds) return null;
+    let start = Math.max(1, Math.min(fieldSize, bounds.start));
+    let end = Math.max(1, Math.min(fieldSize, bounds.end));
+    if (start > end) return null;
+    if (start === end) return ordinal(start);
+    return `${ordinal(start)} to ${ordinal(end)}`;
   }
 
   function formatPlacementHint(hints) {
-    if (!hints?.cm || !hints?.tt) return null;
-    const cm = positionRange(hints.cm.op, hints.cm.value, CM_FIELD);
-    const tt = positionRange(hints.tt.op, hints.tt.value, TT_FIELD);
+    if (!hints) return null;
+    // Legacy single-op hint shape: { cm: {op, value}, tt: {op, value} }
+    if (hints.cm?.op != null || hints.tt?.op != null) {
+      const cm = hints.cm ? positionRange(hints.cm.op, hints.cm.value, CM_FIELD) : null;
+      const tt = hints.tt ? positionRange(hints.tt.op, hints.tt.value, TT_FIELD) : null;
+      if (!cm || !tt) return null;
+      return `${cm} (CM), ${tt} (TT)`;
+    }
+    // Merged bounds shape: { cm: {start, end}, tt: {start, end} }
+    const cm = formatBoundsRange(hints.cm, CM_FIELD);
+    const tt = formatBoundsRange(hints.tt, TT_FIELD);
     if (!cm || !tt) return null;
     return `${cm} (CM), ${tt} (TT)`;
   }
@@ -273,6 +326,9 @@
     }
 
     const entries = [];
+    let orderRateEmitted = false;
+    const placementText = formatPlacementHint(placementHints);
+
     for (const part of andParts) {
       const chunk = stripParens(part.text);
       if (chunk.includes("@") || chunk.includes("|") || (chunk.includes("(") && chunk.includes(")"))) {
@@ -289,8 +345,25 @@
           continue;
         }
       }
+
+      const parsed = parseAtomRaw(chunk);
+      // Collapse every order_rate / order atom into one combined placement line
+      if (parsed?.field === "order_rate" || parsed?.field === "order") {
+        if (orderRateEmitted) continue;
+        if (placementText) {
+          entries.push({
+            field: "order_rate",
+            text: placementText,
+            rank: fieldRank("order_rate"),
+          });
+          orderRateEmitted = true;
+          continue;
+        }
+      }
+
       const entry = entryFromAtom(chunk, placementHints);
       if (entry) entries.push(entry);
+      if (entry?.field === "order_rate" || entry?.field === "order") orderRateEmitted = true;
     }
 
     // Upgrade final corner compounds when both present as separate lines
