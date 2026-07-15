@@ -22,6 +22,100 @@
   };
 
   let canvas, ctx;
+  let audioCtx = null;
+  let spinTickTimer = null;
+  let muted = localStorage.getItem("wheelspin-muted") === "1";
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function tone(freq, start, duration, type = "square", gain = 0.08) {
+    const ctx = getAudioCtx();
+    if (!ctx || muted) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(gain, start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.02);
+  }
+
+  function playSpinTick(intensity = 1) {
+    const ctx = getAudioCtx();
+    if (!ctx || muted) return;
+    const t = ctx.currentTime;
+    // Soft click / ratchet tick
+    tone(180 + intensity * 40, t, 0.045, "triangle", 0.045 * intensity);
+    tone(520 + intensity * 80, t, 0.03, "square", 0.025 * intensity);
+  }
+
+  function startSpinSfx(durationMs = 4000) {
+    stopSpinSfx();
+    const ctx = getAudioCtx();
+    if (!ctx || muted) return;
+
+    const start = performance.now();
+    let nextAt = 0;
+
+    function schedule() {
+      if (!state.spinning) return;
+      const elapsed = performance.now() - start;
+      if (elapsed >= durationMs) return;
+
+      // Interval grows as the wheel slows (matches ease-out feel)
+      const progress = elapsed / durationMs;
+      const interval = 55 + progress * progress * 280;
+      const intensity = Math.max(0.35, 1 - progress * 0.55);
+
+      if (elapsed >= nextAt) {
+        playSpinTick(intensity);
+        nextAt = elapsed + interval;
+      }
+      spinTickTimer = requestAnimationFrame(schedule);
+    }
+    spinTickTimer = requestAnimationFrame(schedule);
+  }
+
+  function stopSpinSfx() {
+    if (spinTickTimer) {
+      cancelAnimationFrame(spinTickTimer);
+      spinTickTimer = null;
+    }
+  }
+
+  function playWinSfx() {
+    const ctx = getAudioCtx();
+    if (!ctx || muted) return;
+    const t = ctx.currentTime;
+    // Short celebratory arpeggio
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      tone(freq, t + i * 0.09, 0.22, "triangle", 0.09);
+      tone(freq * 2, t + i * 0.09, 0.16, "sine", 0.035);
+    });
+    // Soft sparkle trail
+    tone(1318.5, t + 0.38, 0.35, "sine", 0.05);
+  }
+
+  function syncMuteUi() {
+    const btn = document.getElementById("mute-toggle");
+    if (!btn) return;
+    btn.querySelector(".material-symbols-outlined").textContent = muted ? "volume_off" : "volume_up";
+    btn.title = muted ? "Unmute sounds" : "Mute sounds";
+    btn.setAttribute("aria-pressed", muted ? "true" : "false");
+  }
 
   function drawWheel() {
     const size = canvas.width;
@@ -107,6 +201,7 @@
 
   function spin() {
     if (state.spinning || state.entries.length < 1) return;
+    getAudioCtx(); // unlock audio on user gesture
     if (state.entries.length === 1) {
       finishSpin(0);
       return;
@@ -116,12 +211,16 @@
     btn.disabled = true;
     document.getElementById("winner-display").classList.add("hidden");
 
+    const spinMs = 4000;
+    startSpinSfx(spinMs);
+
     const rotations = 7 + Math.floor(Math.random() * 5);
     const extra = Math.floor(Math.random() * 360);
     state.rotation += rotations * 360 + extra;
     canvas.style.transform = `rotate(${state.rotation}deg)`;
 
     setTimeout(() => {
+      stopSpinSfx();
       const actual = ((state.rotation % 360) + 360) % 360;
       const arc = 360 / state.entries.length;
       let winningAngle = (270 - actual) % 360;
@@ -130,7 +229,7 @@
       finishSpin(index);
       btn.disabled = false;
       state.spinning = false;
-    }, 4000);
+    }, spinMs);
   }
 
   function finishSpin(index) {
@@ -140,6 +239,7 @@
     document.getElementById("last-spin").textContent = result;
     state.totalSpins += 1;
     document.getElementById("total-spins").textContent = String(state.totalSpins);
+    playWinSfx();
 
     if (state.elimination && state.entries.length > 1) {
       state.eliminated.push(result);
@@ -177,6 +277,15 @@
 
     state.entries = [...state.presets[state.presetKey]];
     renderList();
+    syncMuteUi();
+
+    document.getElementById("mute-toggle")?.addEventListener("click", () => {
+      muted = !muted;
+      localStorage.setItem("wheelspin-muted", muted ? "1" : "0");
+      if (muted) stopSpinSfx();
+      else getAudioCtx();
+      syncMuteUi();
+    });
 
     document.getElementById("spin-button")?.addEventListener("click", spin);
     document.getElementById("wheel-preset")?.addEventListener("change", (e) => {
