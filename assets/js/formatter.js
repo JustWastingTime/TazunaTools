@@ -1,17 +1,130 @@
 /** Event text → supporter.json event object */
 (function () {
   const CHAIN_MARK = /^[（(]?[❯>]+[）)]?\s*$/;
-  const CHOICE_MARK = /^[（(]?(Top|Bottom|Left|Right|Option\s*\d+|\d+)[）)]?\s*(.*)$/i;
+  // Bare choice labels: Top / Bottom / Bot / Middle / Mid / Left / Right
+  const CHOICE_MARK = /^(?:[（(])?(Top|Bottom|Bot|Middle|Mid|Left|Right|Option\s*\d+)(?:[）)])?$/i;
+  const RANDOM_EITHER = /^randomly\s+either$/i;
+  const OR_SEP = /^or$/i;
 
   function isRewardLine(line) {
     return /(?:\+|-)\d+|hint|bond|energy|mood|skill points|event chain ended|fans/i.test(line);
   }
 
+  function isChoiceLabel(line) {
+    return CHOICE_MARK.test(String(line || "").trim());
+  }
+
+  function isRandomEither(line) {
+    return RANDOM_EITHER.test(String(line || "").trim());
+  }
+
+  function isOrSeparator(line) {
+    return OR_SEP.test(String(line || "").trim());
+  }
+
+  function isStructureLine(line) {
+    const t = String(line || "").trim();
+    return isChoiceLabel(t) || isRandomEither(t) || isOrSeparator(t) || CHAIN_MARK.test(t);
+  }
+
+  /** "Biwa Hayahide bond +5" → "Bond +5" */
+  function normalizeReward(line) {
+    let text = String(line || "").trim();
+    if (!text) return "";
+
+    const namedBond = text.match(/^(.+?)\s+bond\s*([+-]?\d+)\s*$/i);
+    if (namedBond) {
+      const delta = namedBond[2].startsWith("+") || namedBond[2].startsWith("-")
+        ? namedBond[2]
+        : `+${namedBond[2]}`;
+      return `Bond ${delta}`;
+    }
+
+    const bareBond = text.match(/^bond\s*([+-]?\d+)\s*$/i);
+    if (bareBond) {
+      const delta = bareBond[1].startsWith("+") || bareBond[1].startsWith("-")
+        ? bareBond[1]
+        : `+${bareBond[1]}`;
+      return `Bond ${delta}`;
+    }
+
+    return text;
+  }
+
+  function isBondReward(text) {
+    return /^Bond\s*[+-]?\d+/i.test(text);
+  }
+
+  function isHintReward(text) {
+    return /\bhint\b/i.test(text);
+  }
+
+  /**
+   * Join a single reward branch.
+   * Preserve order, but if Bond and hint both appear, emit all Bonds before all hints
+   * at the first bond/hint position (so "Event chain ended" stays after).
+   */
+  function joinBranch(lines) {
+    const normalized = lines.map(normalizeReward).filter(Boolean);
+    if (!normalized.length) return "";
+
+    const bonds = normalized.filter(isBondReward);
+    const hints = normalized.filter(isHintReward);
+    if (!bonds.length || !hints.length) {
+      return normalized.join(", ");
+    }
+
+    const out = [];
+    let emittedBondHint = false;
+    for (const item of normalized) {
+      if (isBondReward(item) || isHintReward(item)) {
+        if (!emittedBondHint) {
+          out.push(...bonds, ...hints);
+          emittedBondHint = true;
+        }
+        continue;
+      }
+      out.push(item);
+    }
+    return out.join(", ");
+  }
+
+  /**
+   * Format reward lines. "Randomly either" / "or" become a single string with ", OR ".
+   */
   function joinRewards(lines) {
-    return lines
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .join(", ");
+    const cleaned = lines
+      .map((l) => String(l || "").trim())
+      .filter((l) => l && !isChoiceLabel(l));
+
+    const hasRandom = cleaned.some(isRandomEither);
+    const orIndexes = [];
+    cleaned.forEach((line, i) => {
+      if (isOrSeparator(line)) orIndexes.push(i);
+    });
+
+    if (hasRandom || orIndexes.length) {
+      // Drop "Randomly either"; split on bare "or"
+      const withoutHeader = cleaned.filter((l) => !isRandomEither(l));
+      const branches = [];
+      let current = [];
+      for (const line of withoutHeader) {
+        if (isOrSeparator(line)) {
+          branches.push(current);
+          current = [];
+          continue;
+        }
+        current.push(line);
+      }
+      branches.push(current);
+
+      return branches
+        .map(joinBranch)
+        .filter(Boolean)
+        .join(", OR ");
+    }
+
+    return joinBranch(cleaned);
   }
 
   function detectType(lines) {
@@ -30,45 +143,33 @@
     const type = detectType(lines);
     const body = lines.filter((l) => !CHAIN_MARK.test(l));
 
-    // Choice-style: (Top) / (Bottom)
     const choiceIndexes = [];
     body.forEach((line, i) => {
-      const m = line.match(CHOICE_MARK);
-      if (m && (m[1] || /^(Top|Bottom|Left|Right)$/i.test(line.replace(/[()（）]/g, "")))) {
-        choiceIndexes.push(i);
-      }
+      if (isChoiceLabel(line)) choiceIndexes.push(i);
     });
 
-    if (choiceIndexes.length >= 2) {
-      const nameParts = body.slice(0, choiceIndexes[0]);
+    if (choiceIndexes.length >= 1) {
+      const nameParts = body.slice(0, choiceIndexes[0]).filter((l) => !isStructureLine(l));
       let name = nameParts.join(" ").trim();
       const results = [];
+
       for (let c = 0; c < choiceIndexes.length; c++) {
         const start = choiceIndexes[c];
         const end = c + 1 < choiceIndexes.length ? choiceIndexes[c + 1] : body.length;
-        const header = body[start].match(CHOICE_MARK);
-        const headerRest = (header?.[2] || "").trim();
         const rewardLines = body.slice(start + 1, end);
-        if (headerRest && !isRewardLine(headerRest) && !name) {
-          // title on first choice line
-        }
-        const rewards = [];
-        if (headerRest && isRewardLine(headerRest)) rewards.push(headerRest);
-        rewardLines.forEach((r) => rewards.push(r));
-        results.push(joinRewards(rewards));
+        results.push(joinRewards(rewardLines));
       }
-      if (!name) {
-        // Use text before rewards on first block if any non-choice title existed
-        name = "Untitled Event";
-      }
-      return { name, type, results };
+
+      if (!name) name = "Untitled Event";
+      return { name, type, results: results.filter((r) => r.length) };
     }
 
     // Standard: title then reward lines
     let name = "";
     const rewards = [];
     for (const line of body) {
-      if (!name && !isRewardLine(line)) {
+      if (isStructureLine(line) && !isRandomEither(line) && !isOrSeparator(line)) continue;
+      if (!name && !isRewardLine(line) && !isRandomEither(line) && !isOrSeparator(line)) {
         name = line.replace(/^[（(]?[❯>]+[）)]?\s*/, "").trim();
         continue;
       }
@@ -91,7 +192,6 @@
     const raw = String(input || "").trim();
     if (!raw) return [];
 
-    // Split on blank lines or new chain markers
     const chunks = [];
     let current = [];
     for (const line of raw.split(/\r?\n/)) {
