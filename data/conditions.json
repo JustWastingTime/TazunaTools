@@ -165,6 +165,9 @@
     "is_finalcorner": {
       "values": { "1": "Final corner and beyond", "0": "Not final corner and beyond" }
     },
+    "is_finalcorner_laterhalf": {
+      "values": { "1": "Second half of final corner" }
+    },
     "is_finalcorner_random": {
       "values": { "1": "Random point in the final corner" }
     },
@@ -471,6 +474,7 @@
     "straight_random",
     "up_slope_random",
     "is_finalcorner",
+    "is_finalcorner_laterhalf",
     "is_finalcorner_random",
     "is_last_straight_onetime",
     "is_move_lane",
