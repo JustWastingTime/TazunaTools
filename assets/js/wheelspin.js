@@ -298,16 +298,40 @@
       state.elimination = e.target.checked;
       document.getElementById("eliminated-wrap")?.classList.toggle("hidden", !state.elimination);
     });
+    function parseEntryLines(text) {
+      return String(text || "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+
+    function addEntries(names) {
+      if (!names.length) return;
+      state.entries.push(...names);
+      renderList();
+    }
+
     document.getElementById("add-entry")?.addEventListener("click", () => {
       const input = document.getElementById("new-entry-name");
-      const name = input.value.trim();
-      if (!name) return;
-      state.entries.push(name);
+      const names = parseEntryLines(input.value);
+      if (!names.length) return;
+      addEntries(names);
       input.value = "";
-      renderList();
     });
-    document.getElementById("new-entry-name")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") document.getElementById("add-entry").click();
+    const newEntry = document.getElementById("new-entry-name");
+    newEntry?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById("add-entry").click();
+      }
+    });
+    newEntry?.addEventListener("paste", (e) => {
+      const pasted = e.clipboardData?.getData("text") || "";
+      const names = parseEntryLines(pasted);
+      if (names.length <= 1) return;
+      e.preventDefault();
+      addEntries(names);
+      newEntry.value = "";
     });
     document.getElementById("reset-wheel")?.addEventListener("click", () => {
       state.eliminated = [];
