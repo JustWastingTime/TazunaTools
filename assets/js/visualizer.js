@@ -75,7 +75,7 @@
   function renderMap() {
     const host = document.getElementById("map-host");
     const meta = document.getElementById("map-meta");
-    const map = state.selectedMap;
+    const map = CourseMap.normalizeMap(state.selectedMap);
     if (!map) {
       host.innerHTML = `<p class="muted">No map selected.</p>`;
       return;
@@ -86,16 +86,20 @@
     let warning = "";
     let markers = [];
     if (skill) {
-      const compat = CourseMap.evaluateRequirements(skill, track);
-      if (!compat.ok) warning = `May not work: ${compat.reasons[0]}`;
-      if (skill.activation_map?.show_chart === false) warning = warning || "show_chart is false";
-      markers = CourseMap.markersFromActivationMap(skill, map);
+      const overlay = CourseMap.resolveSkillActivationOverlay(skill, { track }, map);
+      if (overlay.doesNotWork) {
+        warning = `May not work: ${overlay.reasons[0] || "track mismatch"}`;
+      } else if (overlay.shouldShowChart) {
+        markers = overlay.markers;
+      } else if (skill.activation_map?.show_chart === false) {
+        warning = "This skill has no course activation window";
+      }
     }
 
     try {
       host.innerHTML = CourseMap.buildSvg(map, {
-        width: Math.min(1200, host.clientWidth || 1000),
-        markers,
+        width: Math.min(1500, Math.max(900, host.clientWidth || 1000)),
+        skillMarkers: markers,
         warningText: warning,
       });
     } catch (err) {
