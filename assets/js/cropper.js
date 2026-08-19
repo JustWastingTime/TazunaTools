@@ -87,7 +87,11 @@
         <div class="queue-thumb" data-id="${box.id}"></div>
         <div class="queue-meta">
           <input class="field queue-name" data-id="${box.id}" value="${box.name}" />
-          <p class="mono muted">${Math.round(box.w)}×${Math.round(box.h)} · ${box.preset}</p>
+          <p class="mono muted">${Math.round(box.w)}×${Math.round(box.h)} on image${
+            PRESETS[box.preset]?.lock
+              ? ` → ${PRESETS[box.preset].w}×${PRESETS[box.preset].h} export`
+              : ""
+          } · ${box.preset}</p>
         </div>
         <button class="btn-icon danger" data-del="${box.id}" title="Delete">
           <span class="material-symbols-outlined">delete</span>
@@ -231,9 +235,63 @@
     clampBox(box);
   }
 
-  function exportCrops() {
+  const IMBB_KEY_STORAGE = "toolkino-imgbb-key";
+
+  function outputSize(box) {
+    const preset = PRESETS[box.preset];
+    if (preset?.lock) return { w: preset.w, h: preset.h };
+    return { w: Math.max(1, Math.round(box.w)), h: Math.max(1, Math.round(box.h)) };
+  }
+
+  function cropBlob(box) {
+    const out = outputSize(box);
+    const c = document.createElement("canvas");
+    c.width = out.w;
+    c.height = out.h;
+    const xctx = c.getContext("2d");
+    xctx.imageSmoothingEnabled = true;
+    xctx.imageSmoothingQuality = "high";
+    xctx.drawImage(state.img, box.x, box.y, box.w, box.h, 0, 0, out.w, out.h);
+    return new Promise((resolve, reject) => {
+      c.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not encode PNG"))), "image/png");
+    });
+  }
+
+  async function uploadToImgbb(blob, name, apiKey) {
+    const body = new FormData();
+    body.append("key", apiKey);
+    body.append("image", blob, `${name}.png`);
+    body.append("name", name);
+    const res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body });
+    let json = null;
+    try {
+      json = await res.json();
+    } catch (_) {
+      throw new Error(`ImgBB returned ${res.status}`);
+    }
+    if (!json?.success) {
+      throw new Error(json?.error?.message || `ImgBB upload failed (${res.status})`);
+    }
+    return json.data.display_url || json.data.url || json.data.image?.url;
+  }
+
+  function quizDifficulty() {
+    if (state.preset === "expert") return "expert";
+    if (state.preset === "medium") return "hard";
+    return "hard";
+  }
+
+  async function exportCrops() {
     if (!state.img || !state.boxes.length) return;
-    const zipNote = document.getElementById("export-status");
+    const status = document.getElementById("export-status");
+    const btn = document.getElementById("export-btn");
+    const apiKey = (document.getElementById("imgbb-key")?.value || "").trim();
+    if (!apiKey) {
+      if (status) status.textContent = "Add an ImgBB API key first (api.imgbb.com).";
+      document.getElementById("imgbb-key")?.focus();
+      return;
+    }
+
     const answers = state.answers
       .split(/[\n,]/)
       .map((s) => s.trim())
@@ -241,35 +299,41 @@
     const answerList = answers.length ? answers : ["Answer"];
     while (answerList.length < 5) answerList.push("$uma");
 
+    btn.disabled = true;
     const entries = [];
-    state.boxes.forEach((box, i) => {
-      const c = document.createElement("canvas");
-      c.width = Math.round(box.w);
-      c.height = Math.round(box.h);
-      c.getContext("2d").drawImage(state.img, box.x, box.y, box.w, box.h, 0, 0, c.width, c.height);
-      c.toBlob((blob) => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `${box.name || `crop_${i + 1}`}.png`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      }, "image/png");
+    try {
+      for (let i = 0; i < state.boxes.length; i++) {
+        const box = state.boxes[i];
+        const name = box.name || `crop_${i + 1}`;
+        if (status) status.textContent = `Uploading ${i + 1}/${state.boxes.length} to ImgBB…`;
+        const blob = await cropBlob(box);
+        const url = await uploadToImgbb(blob, name, apiKey);
+        if (!url) throw new Error(`No URL returned for ${name}`);
+        entries.push([url, answerList.slice(0, 5)]);
+      }
 
-      entries.push([
-        `https://cdn.fujikiseki.xyz/uma-assets/REPLACE_ME/${box.name}.png`,
-        answerList.slice(0, 5),
-      ]);
-    });
-
-    const quizJson = {
-      promptTemplate: state.prompt,
-      difficulty: state.preset === "medium" ? "hard" : state.preset === "expert" ? "expert" : "hard",
-      entries,
-    };
-    const jsonText = JSON.stringify(quizJson, null, 2);
-    document.getElementById("quiz-json").textContent = jsonText;
-    Toolkino.downloadText("umaguesser-entry.json", jsonText);
-    if (zipNote) zipNote.textContent = `Exported ${state.boxes.length} PNG(s) + quiz JSON. Replace CDN path after upload.`;
+      const quizJson = {
+        promptTemplate: state.prompt,
+        difficulty: quizDifficulty(),
+        entries,
+      };
+      const jsonText = JSON.stringify(quizJson, null, 2);
+      document.getElementById("quiz-json").textContent = jsonText;
+      Toolkino.downloadText("umaguesser-entry.json", jsonText);
+      if (status) status.textContent = `Uploaded ${entries.length} image(s) to ImgBB. JSON uses those URLs.`;
+    } catch (err) {
+      if (status) status.textContent = err.message || "ImgBB upload failed.";
+      if (entries.length) {
+        const quizJson = {
+          promptTemplate: state.prompt,
+          difficulty: quizDifficulty(),
+          entries,
+        };
+        document.getElementById("quiz-json").textContent = JSON.stringify(quizJson, null, 2);
+      }
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function bindCanvas() {
@@ -432,8 +496,18 @@
       }
     });
 
+    const keyInput = document.getElementById("imgbb-key");
+    if (keyInput) {
+      keyInput.value = localStorage.getItem(IMBB_KEY_STORAGE) || "";
+      keyInput.addEventListener("input", () => {
+        localStorage.setItem(IMBB_KEY_STORAGE, keyInput.value.trim());
+      });
+    }
+
     document.getElementById("add-box")?.addEventListener("click", () => addBox());
-    document.getElementById("export-btn")?.addEventListener("click", exportCrops);
+    document.getElementById("export-btn")?.addEventListener("click", () => {
+      exportCrops();
+    });
     document.getElementById("answers-input")?.addEventListener("input", (e) => {
       state.answers = e.target.value;
     });

@@ -14,7 +14,7 @@
   <main class="main">
     <header class="page-header">
       <h2>Image Quiz Cropper</h2>
-      <p>Upload an image, place preset crop boxes, export PNGs + umaguesser JSON.</p>
+      <p>Upload an image, place preset crop boxes, upload crops to ImgBB, and emit umaguesser JSON with those URLs.</p>
     </header>
     <div class="cropper-layout">
       <div class="crop-workspace" id="workspace">
@@ -56,13 +56,16 @@
           <input class="field" id="prompt-input" value="Who's that uma? It's ..." />
           <label class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">Answers (comma / newline)</label>
           <textarea class="field" id="answers-input" rows="3" placeholder="Special Week, Spe, $uma"></textarea>
+          <label class="label-caps" style="font-size:10px;color:var(--on-surface-variant);">ImgBB API key</label>
+          <input class="field" id="imgbb-key" type="password" autocomplete="off" placeholder="Paste key from api.imgbb.com" />
+          <p class="mono muted" style="margin:0;font-size:10px;font-style:normal;">Stored in this browser. Get a key at <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer">api.imgbb.com</a>.</p>
           <div id="crop-queue"></div>
         </div>
         <div class="crop-side-foot">
           <button class="btn btn-primary" id="export-btn" style="width:100%;">
-            <span class="material-symbols-outlined">auto_awesome</span> Generate assets
+            <span class="material-symbols-outlined">cloud_upload</span> Upload to ImgBB
           </button>
-          <p class="mono muted" id="export-status" style="text-align:center;margin:0.6rem 0 0;font-size:10px;font-style:normal;">PNG downloads + quiz JSON</p>
+          <p class="mono muted" id="export-status" style="text-align:center;margin:0.6rem 0 0;font-size:10px;font-style:normal;">Uploads crops and fills quiz JSON with i.ibb.co URLs</p>
           <pre id="quiz-json" class="mono">// Quiz JSON preview</pre>
         </div>
       </aside>
@@ -73,7 +76,7 @@
     </footer>
   </main>
   <script src="../assets/js/shared.js"></script>
-  <script src="../assets/js/cropper.js"></script>
+  <script src="../assets/js/cropper.js?v=3"></script>
   <script>document.addEventListener("DOMContentLoaded", () => Toolkino.mountShell("cropper"));</script>
 </body>
 </html>
