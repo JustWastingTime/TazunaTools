@@ -2,9 +2,9 @@
 (function () {
   const PRESETS = {
     free: { label: "Free", w: 0, h: 0, lock: false },
-    medium: { label: "Medium (stand-medium)", w: 320, h: 320, lock: true },
-    hard: { label: "Hard (stand-hard)", w: 220, h: 220, lock: true },
-    expert: { label: "Expert (tight)", w: 140, h: 140, lock: true },
+    medium: { label: "Medium (stand-medium)", w: 192, h: 192, lock: true },
+    hard: { label: "Hard (stand-hard)", w: 128, h: 128, lock: true },
+    expert: { label: "Expert (tight)", w: 64, h: 64, lock: true },
   };
 
   const state = {
