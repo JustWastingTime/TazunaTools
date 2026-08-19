@@ -60,7 +60,14 @@
       ctx.font = "bold 11px 'Space Mono', monospace";
       ctx.fillText(box.name, x + 6, y - 5);
       if (active) {
-        [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([hx, hy]) => {
+        const handles = [
+          [x, y], [x + w / 2, y], [x + w, y],
+          [x, y + h / 2], [x + w, y + h / 2],
+          [x, y + h], [x + w / 2, y + h], [x + w, y + h],
+        ];
+        handles.forEach(([hx, hy]) => {
+          ctx.fillStyle = "#121316";
+          ctx.fillRect(hx - 5, hy - 5, 10, 10);
           ctx.fillStyle = "#54e98a";
           ctx.fillRect(hx - 4, hy - 4, 8, 8);
         });
@@ -126,14 +133,102 @@
     renderQueue();
   }
 
-  function hitTest(mx, my) {
-    const x = mx / state.scale;
-    const y = my / state.scale;
+  function canvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width ? canvas.width / rect.width : 1;
+    const sy = rect.height ? canvas.height / rect.height : 1;
+    const cx = (e.clientX - rect.left) * sx;
+    const cy = (e.clientY - rect.top) * sy;
+    return { cx, cy, x: cx / state.scale, y: cy / state.scale };
+  }
+
+  function handleAt(box, cx, cy) {
+    const x = box.x * state.scale;
+    const y = box.y * state.scale;
+    const w = box.w * state.scale;
+    const h = box.h * state.scale;
+    const pad = 10;
+    const near = (a, b) => Math.abs(a - b) <= pad;
+    const inX = cx >= x - pad && cx <= x + w + pad;
+    const inY = cy >= y - pad && cy <= y + h + pad;
+    const left = near(cx, x) && inY;
+    const right = near(cx, x + w) && inY;
+    const top = near(cy, y) && inX;
+    const bottom = near(cy, y + h) && inX;
+    if (top && left) return "nw";
+    if (top && right) return "ne";
+    if (bottom && left) return "sw";
+    if (bottom && right) return "se";
+    if (top) return "n";
+    if (bottom) return "s";
+    if (left) return "w";
+    if (right) return "e";
+    return null;
+  }
+
+  function hitTest(pt) {
     for (let i = state.boxes.length - 1; i >= 0; i--) {
       const b = state.boxes[i];
-      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b;
+      if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return b;
     }
     return null;
+  }
+
+  function cursorForHandle(handle) {
+    if (handle === "n" || handle === "s") return "ns-resize";
+    if (handle === "e" || handle === "w") return "ew-resize";
+    if (handle === "ne" || handle === "sw") return "nesw-resize";
+    if (handle === "nw" || handle === "se") return "nwse-resize";
+    return "grab";
+  }
+
+  function clampBox(box) {
+    const min = 24;
+    box.w = Math.max(min, Math.min(box.w, state.naturalW));
+    box.h = Math.max(min, Math.min(box.h, state.naturalH));
+    box.x = Math.min(Math.max(0, box.x), state.naturalW - box.w);
+    box.y = Math.min(Math.max(0, box.y), state.naturalH - box.h);
+  }
+
+  function applyResize(box, handle, imgX, imgY, start) {
+    const lock = Boolean(PRESETS[box.preset]?.lock);
+    const right = start.x + start.w;
+    const bottom = start.y + start.h;
+    let x = start.x;
+    let y = start.y;
+    let w = start.w;
+    let h = start.h;
+
+    if (handle.includes("e")) w = imgX - start.x;
+    if (handle.includes("s")) h = imgY - start.y;
+    if (handle.includes("w")) {
+      w = right - imgX;
+      x = imgX;
+    }
+    if (handle.includes("n")) {
+      h = bottom - imgY;
+      y = imgY;
+    }
+
+    if (lock) {
+      let size;
+      if (handle === "e" || handle === "w") size = w;
+      else if (handle === "n" || handle === "s") size = h;
+      else size = Math.max(w, h);
+      size = Math.max(24, size);
+      w = size;
+      h = size;
+      if (handle.includes("w")) x = right - w;
+      else x = start.x;
+      if (handle.includes("n")) y = bottom - h;
+      else y = start.y;
+    }
+
+    box.x = x;
+    box.y = y;
+    box.w = w;
+    box.h = h;
+    clampBox(box);
   }
 
   function exportCrops() {
@@ -179,30 +274,72 @@
 
   function bindCanvas() {
     canvas.addEventListener("mousedown", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const hit = hitTest(mx, my);
+      if (!state.img) return;
+      e.preventDefault();
+      const pt = canvasPoint(e);
+      const active = state.boxes.find((b) => b.id === state.activeId);
+      const handle = active ? handleAt(active, pt.cx, pt.cy) : null;
+      if (handle) {
+        state.drag = {
+          mode: "resize",
+          id: active.id,
+          handle,
+          startX: active.x,
+          startY: active.y,
+          startW: active.w,
+          startH: active.h,
+        };
+        return;
+      }
+      const hit = hitTest(pt);
       if (hit) {
         state.activeId = hit.id;
-        state.drag = {
-          id: hit.id,
-          ox: mx / state.scale - hit.x,
-          oy: my / state.scale - hit.y,
-        };
+        const onHandle = handleAt(hit, pt.cx, pt.cy);
+        if (onHandle) {
+          state.drag = {
+            mode: "resize",
+            id: hit.id,
+            handle: onHandle,
+            startX: hit.x,
+            startY: hit.y,
+            startW: hit.w,
+            startH: hit.h,
+          };
+        } else {
+          state.drag = {
+            mode: "move",
+            id: hit.id,
+            ox: pt.x - hit.x,
+            oy: pt.y - hit.y,
+          };
+        }
         redraw();
         renderQueue();
       }
     });
     window.addEventListener("mousemove", (e) => {
-      if (!state.drag) return;
+      if (!state.img) return;
+      const pt = canvasPoint(e);
+      if (!state.drag) {
+        const active = state.boxes.find((b) => b.id === state.activeId);
+        const handle = active ? handleAt(active, pt.cx, pt.cy) : null;
+        canvas.style.cursor = handle ? cursorForHandle(handle) : hitTest(pt) ? "grab" : "default";
+        return;
+      }
       const box = state.boxes.find((b) => b.id === state.drag.id);
       if (!box) return;
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      box.x = Math.min(Math.max(0, mx / state.scale - state.drag.ox), state.naturalW - box.w);
-      box.y = Math.min(Math.max(0, my / state.scale - state.drag.oy), state.naturalH - box.h);
+      if (state.drag.mode === "resize") {
+        applyResize(box, state.drag.handle, pt.x, pt.y, {
+          x: state.drag.startX,
+          y: state.drag.startY,
+          w: state.drag.startW,
+          h: state.drag.startH,
+        });
+      } else {
+        box.x = Math.min(Math.max(0, pt.x - state.drag.ox), state.naturalW - box.w);
+        box.y = Math.min(Math.max(0, pt.y - state.drag.oy), state.naturalH - box.h);
+      }
+      canvas.style.cursor = state.drag.mode === "resize" ? cursorForHandle(state.drag.handle) : "grabbing";
       redraw();
     });
     window.addEventListener("mouseup", () => {
@@ -231,7 +368,7 @@
         state.naturalH = img.naturalHeight;
         state.boxes = [];
         document.getElementById("file-meta").textContent =
-          `${file.name} · ${img.naturalWidth}×${img.naturalHeight}`;
+          `${file.name || "pasted image"} · ${img.naturalWidth}×${img.naturalHeight}`;
         dropZone?.classList.add("hidden");
         canvas.classList.remove("hidden");
         addBox(state.preset);
@@ -240,7 +377,32 @@
       img.src = url;
     }
 
+    function loadFromClipboard(clipboardData) {
+      if (!clipboardData) return false;
+      const items = clipboardData.items ? Array.from(clipboardData.items) : [];
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          loadFile(file);
+          return true;
+        }
+      }
+      const files = clipboardData.files ? Array.from(clipboardData.files) : [];
+      const imageFile = files.find((f) => f.type.startsWith("image/"));
+      if (imageFile) {
+        loadFile(imageFile);
+        return true;
+      }
+      return false;
+    }
+
     fileInput?.addEventListener("change", (e) => loadFile(e.target.files?.[0]));
+    window.addEventListener("paste", (e) => {
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+      if (loadFromClipboard(e.clipboardData)) e.preventDefault();
+    });
     ["dragenter", "dragover"].forEach((ev) => {
       dropZone?.addEventListener(ev, (e) => {
         e.preventDefault();
