@@ -288,5 +288,124 @@
         "image": "",
         "umalator": "https://dev.umalator.app/#H4sIAAAAAAAACt2PPWrEMBCF7%2FJqFbY3gTDdlukCW4YthDV2xFoaoxlhgvHdgzYJITlCuvczfMPbMUotys8B1Pd9d3KYi9QcQIPDxt7euIB6B2WvkkEnB4uJ7736tC6soMeuc6jJ96AdUm2K1oiAg67MDT60EzWfYvbfdpWt0Z%2Banqsp6KHJLWqQ9GXUijee30G4cL5JhUOIaj6PfF4tWg3cuvaqlsn%2FSs%2F4AfyJk8jnSL3FZVHQ69VhkjJyuLTkRTRalKyg%2FTju64b%2Fuu74AIpADhkHAgAA",
         "map_id": "Ooi 2000m (clockwise) (dirt)"
+    },
+    {   "name": "Libra Cup 2026", "number": "18",
+        "track": {
+            "racetrack": "Hanshin",
+            "terrain": "Turf",
+            "distance_type": "Mile",
+            "distance_meters": "1600m",
+            "direction": "Right-Handed",
+            "ground": "Firm",
+            "season": "Autumn",
+            "weather": "Cloudy",
+            "similar": "Asahi Hai Futurity Stakes, Hanshin Juvenile Fillies, Oka Sho"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Hanshin 1600m (outer) (clockwise)"
+    },
+    {   "name": "Scorpio Cup 2026", "number": "19",
+        "track": {
+            "racetrack": "Kyoto",
+            "terrain": "Turf",
+            "distance_type": "Medium",
+            "distance_meters": "2200m",
+            "direction": "Right-Handed",
+            "ground": "Firm",
+            "season": "Autumn",
+            "weather": "Sunny",
+            "similar": "Queen Elizabeth II Cup"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Kyoto 2200m (outer) (clockwise)"
+    },
+    {   "name": "Sagittarius Cup 2026", "number": "20",
+        "track": {
+            "racetrack": "Nakayama",
+            "terrain": "Turf",
+            "distance_type": "Long",
+            "distance_meters": "2500m",
+            "direction": "Right-Handed",
+            "ground": "Good",
+            "season": "Winter",
+            "weather": "Cloudy",
+            "similar": "Arima Kinen"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Nakayama 2500m (inner) (clockwise)"
+    },
+    {   "name": "Capricorn Cup 2026", "number": "21",
+        "track": {
+            "racetrack": "Chukyo",
+            "terrain": "Turf",
+            "distance_type": "Sprint",
+            "distance_meters": "1200m",
+            "direction": "Left-Handed",
+            "ground": "Firm",
+            "season": "Winter",
+            "weather": "Sunny",
+            "similar": "Takamatsunomiya Kinen"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Chukyo 1200m (counterclockwise)"
+    },
+    {   "name": "Aquarius Cup 2026", "number": "22",
+        "track": {
+            "racetrack": "Tokyo",
+            "terrain": "Dirt",
+            "distance_type": "Mile",
+            "distance_meters": "1600m",
+            "direction": "Left-Handed",
+            "ground": "Soft",
+            "season": "Winter",
+            "weather": "Snow",
+            "similar": "February Stakes"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Tokyo 1600m (counterclockwise) (dirt)"
+    },
+    {   "name": "Pisces Cup 2026", "number": "23",
+        "track": {
+            "racetrack": "Nakayama",
+            "terrain": "Turf",
+            "distance_type": "Medium",
+            "distance_meters": "2000m",
+            "direction": "Right-Handed",
+            "ground": "Firm",
+            "season": "Spring",
+            "weather": "Sunny",
+            "similar": "Hopeful Stakes, Satsuki Sho"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Nakayama 2000m (inner) (clockwise)"
+    },
+    {   "name": "Aries Cup 2026", "number": "24",
+        "track": {
+            "racetrack": "Kyoto",
+            "terrain": "Turf",
+            "distance_type": "Long",
+            "distance_meters": "3200m",
+            "direction": "Right-Handed",
+            "ground": "Firm",
+            "season": "Spring",
+            "weather": "Sunny",
+            "similar": "Tenno Sho Spring"
+        },
+        "date": "",
+        "image": "",
+        "umalator": "",
+        "map_id": "Kyoto 3200m (outer) (clockwise)"
     }
 ]

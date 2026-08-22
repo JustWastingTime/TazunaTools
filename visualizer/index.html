@@ -19,8 +19,26 @@
     <div class="viz-toolbar">
       <select class="select" id="cm-select" title="Champions Meeting"></select>
       <select class="select" id="map-select" title="Map override"></select>
-      <input class="field" id="skill-search" placeholder="Search skills..." style="min-width:14rem;" />
-      <select class="select" id="skill-select"></select>
+      <div class="skill-combo" id="skill-combo">
+        <input class="field" id="skill-search" placeholder="Search skills…" autocomplete="off" aria-autocomplete="list" aria-controls="skill-combo-list" />
+        <div class="skill-combo-list hidden" id="skill-combo-list" role="listbox"></div>
+      </div>
+    </div>
+    <div class="viz-filters" id="skill-filters">
+      <span class="label-caps">Rarity</span>
+      <label class="filter-chip"><input type="checkbox" data-filter="rarity" value="unique" /> Unique</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="rarity" value="rare" /> Rare</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="rarity" value="normal" /> White</label>
+      <span class="filter-sep"></span>
+      <span class="label-caps">Type</span>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="accel" /> Accel</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="velocity" /> Velocity</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="recovery" /> Recovery</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="speed" /> Speed</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="stamina" /> Stamina</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="power" /> Power</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="guts" /> Guts</label>
+      <label class="filter-chip"><input type="checkbox" data-filter="type" value="gate" /> Gate</label>
     </div>
     <div class="map-shell">
       <div class="map-heading">

@@ -313,6 +313,105 @@
   width: auto;
 }
 
+.skill-combo {
+  position: relative;
+  flex: 1 1 22rem;
+  min-width: 16rem;
+}
+
+.skill-combo .field {
+  width: 100%;
+  min-width: 0;
+}
+
+.skill-combo-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  max-height: 18rem;
+  overflow: auto;
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.6rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.skill-combo-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.skill-combo-item:hover,
+.skill-combo-item.active {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.skill-combo-item .meta {
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  font-family: "Space Mono", monospace;
+  white-space: nowrap;
+}
+
+.skill-combo-empty,
+.skill-combo-more {
+  padding: 0.6rem 0.75rem;
+  color: var(--on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.viz-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin: -0.5rem 0 1.15rem;
+}
+
+.viz-filters .label-caps {
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  margin-right: 0.15rem;
+}
+
+.filter-sep {
+  width: 1px;
+  height: 1rem;
+  background: var(--outline-variant);
+  margin: 0 0.25rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container);
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-chip:has(input:checked) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+}
+
+.filter-chip input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
 .map-shell {
   border: 1px solid var(--outline-variant);
   border-radius: 0.75rem;
