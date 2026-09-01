@@ -249,7 +249,30 @@
     }
   }
 
-  function toMeters(value) {
+  const HIDDEN_RACETRACKS = new Set(["longchamp"]);
+  const HIDDEN_TRACKS = new Set([
+    "sapporo 1000m (clockwise) (dirt)",
+    "hakodate 1000m (clockwise) (dirt)",
+    "chukyo 1200m (counterclockwise) (dirt)",
+    "hanshin 1200m (clockwise) (dirt)",
+    "kokura 1000m (clockwise) (dirt)",
+    "sapporo 2400m (clockwise) (dirt)",
+    "hakodate 2400m (clockwise) (dirt)",
+    "fukushima 2400m (clockwise) (dirt)",
+    "nakayama 2400m (clockwise) (dirt)",
+    "tokyo 2400m (counterclockwise) (dirt)",
+    "chukyo 1900m (counterclockwise) (dirt)",
+    "kokura 2400m (clockwise) (dirt)",
+    "niigata 2500m (counterclockwise) (dirt)",
+    "nakayama 2500m (clockwise) (dirt)",
+  ]);
+
+  function isHiddenTrack(map) {
+    const racetrack = String(map?.racetrack || "").toLowerCase();
+    if (HIDDEN_RACETRACKS.has(racetrack)) return true;
+    const name = String(map?.name || `${map?.racetrack || ""} ${map?.distance_meters || ""}`).toLowerCase();
+    return HIDDEN_TRACKS.has(name);
+  }
     const n = parseInt(String(value ?? "").replace(/[^\d]/g, ""), 10);
     return Number.isFinite(n) ? n : 0;
   }
@@ -310,8 +333,9 @@
     try {
       const maps = await Toolkino.loadJson("maps.json");
       if (Array.isArray(maps) && maps.length) {
-        const courses = [...new Set(maps.map((m) => m.racetrack).filter(Boolean))].sort();
-        state.trackCatalog = maps
+        const playable = maps.filter((m) => !isHiddenTrack(m));
+        const courses = [...new Set(playable.map((m) => m.racetrack).filter(Boolean))].sort();
+        state.trackCatalog = playable
           .map((m) => {
             const name = m.name || `${m.racetrack} ${m.distance_meters}`;
             if (!name) return null;
