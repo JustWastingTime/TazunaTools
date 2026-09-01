@@ -273,6 +273,8 @@
     const name = String(map?.name || `${map?.racetrack || ""} ${map?.distance_meters || ""}`).toLowerCase();
     return HIDDEN_TRACKS.has(name);
   }
+
+  function toMeters(value) {
     const n = parseInt(String(value ?? "").replace(/[^\d]/g, ""), 10);
     return Number.isFinite(n) ? n : 0;
   }
