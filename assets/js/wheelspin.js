@@ -19,6 +19,7 @@
     spinning: false,
     totalSpins: 0,
     elimination: false,
+    trackCatalog: [],
   };
 
   let canvas, ctx;
@@ -248,6 +249,51 @@
     }
   }
 
+  function toMeters(value) {
+    const n = parseInt(String(value ?? "").replace(/[^\d]/g, ""), 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function distanceTypeFromMeters(meters) {
+    if (meters <= 1400) return "sprint";
+    if (meters <= 1800) return "mile";
+    if (meters <= 2400) return "medium";
+    return "long";
+  }
+
+  function checkedTrackFilters(kind) {
+    return [...document.querySelectorAll(`#track-filters input[data-track-filter="${kind}"]:checked`)].map(
+      (el) => el.value
+    );
+  }
+
+  function filteredTrackNames() {
+    const distances = checkedTrackFilters("distance");
+    const terrains = checkedTrackFilters("terrain");
+    return state.trackCatalog
+      .filter((track) => {
+        if (distances.length && !distances.includes(track.distanceType)) return false;
+        if (terrains.length && !terrains.includes(track.terrain)) return false;
+        return true;
+      })
+      .map((track) => track.name);
+  }
+
+  function syncTrackFilterUi() {
+    const wrap = document.getElementById("track-filters");
+    wrap?.classList.toggle("hidden", state.presetKey !== "track");
+  }
+
+  function loadPresetPool() {
+    state.eliminated = [];
+    if (state.presetKey === "track" && state.trackCatalog.length) {
+      state.entries = filteredTrackNames();
+    } else {
+      state.entries = [...(state.presets[state.presetKey] || state.presets.custom)];
+    }
+    renderList();
+  }
+
   async function init() {
     canvas = document.getElementById("wheel-canvas");
     ctx = canvas.getContext("2d");
@@ -265,9 +311,19 @@
       const maps = await Toolkino.loadJson("maps.json");
       if (Array.isArray(maps) && maps.length) {
         const courses = [...new Set(maps.map((m) => m.racetrack).filter(Boolean))].sort();
-        const tracks = maps
-          .map((m) => m.name || `${m.racetrack} ${m.distance_meters}`)
+        state.trackCatalog = maps
+          .map((m) => {
+            const name = m.name || `${m.racetrack} ${m.distance_meters}`;
+            if (!name) return null;
+            const meters = toMeters(m.distance_meters);
+            return {
+              name,
+              terrain: String(m.terrain || "").toLowerCase(),
+              distanceType: distanceTypeFromMeters(meters),
+            };
+          })
           .filter(Boolean);
+        const tracks = state.trackCatalog.map((t) => t.name);
         if (courses.length) state.presets.racecourse = courses;
         if (tracks.length) state.presets.track = tracks;
       }
@@ -275,8 +331,8 @@
       /* keep fallback */
     }
 
-    state.entries = [...state.presets[state.presetKey]];
-    renderList();
+    loadPresetPool();
+    syncTrackFilterUi();
     syncMuteUi();
 
     document.getElementById("mute-toggle")?.addEventListener("click", () => {
@@ -290,9 +346,11 @@
     document.getElementById("spin-button")?.addEventListener("click", spin);
     document.getElementById("wheel-preset")?.addEventListener("change", (e) => {
       state.presetKey = e.target.value;
-      state.eliminated = [];
-      state.entries = [...(state.presets[state.presetKey] || state.presets.custom)];
-      renderList();
+      syncTrackFilterUi();
+      loadPresetPool();
+    });
+    document.getElementById("track-filters")?.addEventListener("change", () => {
+      if (state.presetKey === "track") loadPresetPool();
     });
     document.getElementById("elimination-toggle")?.addEventListener("change", (e) => {
       state.elimination = e.target.checked;
@@ -334,9 +392,7 @@
       newEntry.value = "";
     });
     document.getElementById("reset-wheel")?.addEventListener("click", () => {
-      state.eliminated = [];
-      state.entries = [...(state.presets[state.presetKey] || [])];
-      renderList();
+      loadPresetPool();
     });
     document.getElementById("clear-wheel")?.addEventListener("click", () => {
       state.entries = [];

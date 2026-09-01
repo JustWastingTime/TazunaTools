@@ -60,6 +60,17 @@
             <h3 style="margin:0;color:var(--primary);">Customize</h3>
             <p style="margin:0.25rem 0 0;color:var(--on-surface-variant);font-size:0.9rem;">Edit pool entries for the current wheel</p>
           </div>
+          <div id="track-filters" class="viz-filters hidden" style="margin:0;">
+            <span class="label-caps">Distance</span>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="distance" value="sprint" /> Sprint</label>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="distance" value="mile" /> Mile</label>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="distance" value="medium" /> Medium</label>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="distance" value="long" /> Long</label>
+            <span class="filter-sep"></span>
+            <span class="label-caps">Surface</span>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="terrain" value="turf" /> Turf</label>
+            <label class="filter-chip"><input type="checkbox" data-track-filter="terrain" value="dirt" /> Dirt</label>
+          </div>
           <label class="toggle-row">
             <span class="label-caps" style="color:var(--on-surface-variant);">Elimination mode</span>
             <input type="checkbox" id="elimination-toggle" />
