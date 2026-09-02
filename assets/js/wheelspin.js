@@ -5,10 +5,45 @@
     track: ["Turf 1200m", "Turf 1600m", "Turf 1800m", "Turf 2000m", "Turf 2400m", "Turf 3200m", "Dirt 1200m", "Dirt 1400m", "Dirt 1600m", "Dirt 1800m"],
     uma: ["Special Week", "Silence Suzuka", "Tokai Teio", "Maruzensky", "Oguri Cap", "Gold Ship", "Vodka", "Daiwa Scarlet", "Kitasan Black"],
     custom: ["Option A", "Option B", "Option C", "Option D"],
+    conditions: [
+      "Spring Sunny Firm",
+      "Spring Sunny Good",
+      "Spring Cloudy Firm",
+      "Spring Cloudy Good",
+      "Spring Rainy Soft",
+      "Spring Rainy Heavy",
+      "Summer Sunny Firm",
+      "Summer Sunny Good",
+      "Summer Cloudy Firm",
+      "Summer Cloudy Good",
+      "Summer Rainy Soft",
+      "Summer Rainy Heavy",
+      "Fall Sunny Firm",
+      "Fall Sunny Good",
+      "Fall Cloudy Firm",
+      "Fall Cloudy Good",
+      "Fall Rainy Soft",
+      "Fall Rainy Heavy",
+      "Winter Sunny Firm",
+      "Winter Sunny Good",
+      "Winter Cloudy Firm",
+      "Winter Cloudy Good",
+      "Winter Rainy Soft",
+      "Winter Rainy Heavy",
+      "Winter Snowy Good",
+      "Winter Snowy Soft",
+    ],
   };
 
   const segmentColors = ["#1f1f23", "#292a2d", "#343538"];
   const textColors = ["#54e98a", "#ffb961", "#ffc1a6", "#bbcbbb"];
+  const SEASON_PALETTE = {
+    spring: { fills: ["#2a4634", "#355a41"], text: "#b8f0c8" },
+    summer: { fills: ["#4a3c18", "#5c4a1c"], text: "#ffe08a" },
+    fall: { fills: ["#4a2c18", "#5c381c"], text: "#ffb061" },
+    winter: { fills: ["#1c3348", "#24425c"], text: "#9ec9ff" },
+    other: { fills: ["#1f1f23", "#292a2d"], text: "#bbcbbb" },
+  };
 
   const state = {
     presets: { ...FALLBACK },
@@ -118,12 +153,78 @@
     btn.setAttribute("aria-pressed", muted ? "true" : "false");
   }
 
+  function seasonOf(label) {
+    const first = String(label || "")
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase();
+    if (first === "autumn") return "fall";
+    if (first === "spring" || first === "summer" || first === "fall" || first === "winter") return first;
+    return "other";
+  }
+
+  function seasonStyle(label, index) {
+    const palette = SEASON_PALETTE[seasonOf(label)] || SEASON_PALETTE.other;
+    return {
+      fill: palette.fills[index % palette.fills.length],
+      text: palette.text,
+    };
+  }
+
+  function entryWeights() {
+    const groups = {};
+    state.entries.forEach((label, i) => {
+      const key = seasonOf(label);
+      (groups[key] ||= []).push(i);
+    });
+    const keys = Object.keys(groups);
+    const share = keys.length ? 1 / keys.length : 1;
+    const weights = state.entries.map(() => 0);
+    for (const key of keys) {
+      const idxs = groups[key];
+      const w = share / idxs.length;
+      idxs.forEach((i) => {
+        weights[i] = w;
+      });
+    }
+    return weights;
+  }
+
+  function weightsAreEqual(weights) {
+    if (!weights.length) return true;
+    const first = weights[0];
+    return weights.every((w) => Math.abs(w - first) < 1e-9);
+  }
+
+  function sliceLayout() {
+    const weights = entryWeights();
+    const total = weights.reduce((sum, w) => sum + w, 0) || 1;
+    let angle = 0;
+    return state.entries.map((label, i) => {
+      const arc = (weights[i] / total) * Math.PI * 2;
+      const start = angle;
+      angle += arc;
+      return { start, arc, label, weight: weights[i] / total };
+    });
+  }
+
+  function indexAtPointer(rotationDeg) {
+    const actual = ((rotationDeg % 360) + 360) % 360;
+    let deg = (270 - actual) % 360;
+    if (deg < 0) deg += 360;
+    const rad = (deg * Math.PI) / 180;
+    const slices = sliceLayout();
+    for (let i = 0; i < slices.length; i++) {
+      const end = slices[i].start + slices[i].arc;
+      if (rad >= slices[i].start && rad < end - 1e-10) return i;
+    }
+    return Math.max(0, slices.length - 1);
+  }
+
   function drawWheel() {
     const size = canvas.width;
     const center = size / 2;
     const radius = center - 12;
-    const n = state.entries.length || 1;
-    const arc = (2 * Math.PI) / n;
     ctx.clearRect(0, 0, size, size);
 
     if (!state.entries.length) {
@@ -134,12 +235,17 @@
       return;
     }
 
-    state.entries.forEach((label, i) => {
-      const angle = i * arc;
+    const slices = sliceLayout();
+    const smallType = slices.length > 16;
+    const seasonal = slices.some((slice) => seasonOf(slice.label) !== "other");
+    slices.forEach((slice, i) => {
+      const style = seasonal
+        ? seasonStyle(slice.label, i)
+        : { fill: segmentColors[i % segmentColors.length], text: textColors[i % textColors.length] };
       ctx.beginPath();
-      ctx.fillStyle = segmentColors[i % segmentColors.length];
+      ctx.fillStyle = style.fill;
       ctx.moveTo(center, center);
-      ctx.arc(center, center, radius, angle, angle + arc);
+      ctx.arc(center, center, radius, slice.start, slice.start + slice.arc);
       ctx.fill();
       ctx.strokeStyle = "#121316";
       ctx.lineWidth = 2;
@@ -147,12 +253,13 @@
 
       ctx.save();
       ctx.translate(center, center);
-      ctx.rotate(angle + arc / 2);
+      ctx.rotate(slice.start + slice.arc / 2);
       ctx.textAlign = "right";
-      ctx.fillStyle = textColors[i % textColors.length];
-      ctx.font = "bold 15px 'Space Mono'";
-      const text = label.length > 18 ? `${label.slice(0, 15)}...` : label;
-      ctx.fillText(text, radius - 36, 5);
+      ctx.fillStyle = style.text;
+      ctx.font = smallType ? "bold 11px 'Space Mono'" : "bold 15px 'Space Mono'";
+      const max = smallType ? 22 : 18;
+      const text = slice.label.length > max ? `${slice.label.slice(0, max - 3)}...` : slice.label;
+      ctx.fillText(text, radius - 28, 4);
       ctx.restore();
     });
 
@@ -174,12 +281,16 @@
   function renderList() {
     const list = document.getElementById("entry-list");
     list.innerHTML = "";
+    const seasonal = state.entries.some((entry) => seasonOf(entry) !== "other");
     state.entries.forEach((entry, index) => {
+      const swatch = seasonal
+        ? seasonStyle(entry, index).text
+        : textColors[index % textColors.length];
       const div = document.createElement("div");
       div.className = "entry-row";
       div.innerHTML = `
         <div class="entry-left">
-          <span class="swatch" style="background:${textColors[index % textColors.length]}"></span>
+          <span class="swatch" style="background:${swatch}"></span>
           <input class="field entry-edit" data-i="${index}" value="${entry.replaceAll('"', "&quot;")}" />
         </div>
         <button class="btn-icon danger" data-remove="${index}">
@@ -195,8 +306,19 @@
         : `<span class="muted mono">None yet</span>`;
     }
 
-    const chance = state.entries.length ? (100 / state.entries.length).toFixed(1) : "0.0";
-    document.getElementById("odds-percent").textContent = chance;
+    const weights = entryWeights();
+    const suffix = document.getElementById("odds-suffix");
+    if (!state.entries.length) {
+      document.getElementById("odds-percent").textContent = "0.0";
+      if (suffix) suffix.textContent = "%";
+    } else if (weightsAreEqual(weights)) {
+      document.getElementById("odds-percent").textContent = (100 / state.entries.length).toFixed(1);
+      if (suffix) suffix.textContent = "%";
+    } else {
+      const seasons = new Set(state.entries.map(seasonOf));
+      document.getElementById("odds-percent").textContent = (100 / seasons.size).toFixed(0);
+      if (suffix) suffix.textContent = "% / season";
+    }
     drawWheel();
   }
 
@@ -222,11 +344,7 @@
 
     setTimeout(() => {
       stopSpinSfx();
-      const actual = ((state.rotation % 360) + 360) % 360;
-      const arc = 360 / state.entries.length;
-      let winningAngle = (270 - actual) % 360;
-      if (winningAngle < 0) winningAngle += 360;
-      const index = Math.floor(winningAngle / arc) % state.entries.length;
+      const index = indexAtPointer(state.rotation);
       finishSpin(index);
       btn.disabled = false;
       state.spinning = false;
