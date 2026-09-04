@@ -5,6 +5,7 @@
     { id: "formatter", icon: "event_note", label: "Event Formatter" },
     { id: "cropper", icon: "crop", label: "Cropper" },
     { id: "wheelspin", icon: "casino", label: "Wheelspin" },
+    { id: "splitter", icon: "call_split", label: "Splitter" },
     { id: "visualizer", icon: "query_stats", label: "Skill Visualizer" },
   ];
 

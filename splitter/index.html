@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Splitter · Toolkino Minoru</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+  <link rel="stylesheet" href="../assets/css/tools.css" />
+</head>
+<body class="tool-fit" data-page="splitter" data-root="..">
+  <div id="sidebar-mount"></div>
+  <main class="main main-fit">
+    <header class="page-header">
+      <h2>Splitter</h2>
+      <p>Paste a list of names and randomly split them into groups.</p>
+    </header>
+    <section class="splitter-layout">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-dots">
+            <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
+            <span class="panel-title" style="margin-left:0.5rem;">Names</span>
+          </div>
+          <span class="pill" id="name-count">0 names</span>
+        </div>
+        <div class="panel-body">
+          <textarea class="editor" id="name-input" placeholder="VENI VIDI VIVII
+Minh
+Nightfish
+North"></textarea>
+        </div>
+        <div class="splitter-controls">
+          <label class="splitter-count">
+            <span class="label-caps">Groups</span>
+            <input class="field" id="group-count" type="number" min="2" max="50" value="2" />
+          </label>
+          <button class="btn btn-primary" id="split-btn">
+            <span class="material-symbols-outlined">shuffle</span> Split
+          </button>
+          <button class="btn btn-ghost" id="copy-all-btn" disabled>
+            <span class="material-symbols-outlined">content_copy</span> Copy all
+          </button>
+        </div>
+      </div>
+      <div class="splitter-results" id="split-results">
+        <p class="muted">Set a group count and hit Split.</p>
+      </div>
+    </section>
+  </main>
+  <script src="../assets/js/shared.js"></script>
+  <script src="../assets/js/splitter.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => Toolkino.mountShell("splitter"));</script>
+</body>
+</html>
