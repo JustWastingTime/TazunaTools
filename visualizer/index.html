@@ -14,7 +14,7 @@
   <main class="main">
     <header class="page-header">
       <h2>Skill Visualizer</h2>
-      <p>Check skill JSON against Champions Meeting maps or any course override.</p>
+      <p>Inspect catalog skills, or build activation triggers and draw them on the current CM/map.</p>
     </header>
     <div class="viz-toolbar">
       <select class="select" id="cm-select" title="Champions Meeting"></select>
@@ -49,15 +49,33 @@
     </div>
     <div class="viz-grid">
       <div class="card" id="skill-card">
-        <p class="muted">Select or paste a skill JSON to inspect.</p>
+        <p class="muted">Select a skill or apply an activation trigger to inspect.</p>
       </div>
-      <div class="card">
-        <h3 style="margin-top:0;color:var(--secondary);">Paste skill JSON</h3>
-        <p style="color:var(--on-surface-variant);font-size:0.9rem;">Override the dropdown with a raw skill object (useful for validating edits).</p>
-        <textarea class="field mono" id="skill-paste" rows="12" placeholder='{ "skill_name": "...", "activation_map": { ... } }'></textarea>
-        <button class="btn btn-primary" id="paste-apply" style="margin-top:0.75rem;width:100%;">
-          <span class="material-symbols-outlined">play_arrow</span> Apply JSON
-        </button>
+      <div class="card tester-card">
+        <h3 class="tester-title">Activation map tester</h3>
+        <p class="tester-lead">Pick values for a trigger. JSON is generated below and boxes draw on the map as you edit.</p>
+        <div id="tester-list"></div>
+        <div class="tester-toolbar">
+          <button type="button" class="btn btn-ghost" id="tester-add">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+            Add trigger
+          </button>
+          <button type="button" class="btn btn-ghost" id="tester-copy">
+            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+            Copy JSON
+          </button>
+        </div>
+        <pre class="mono raw-json tester-json" id="tester-json" tabindex="0"></pre>
+        <p class="sr-only" id="tester-status" role="status" aria-live="polite"></p>
+        <details class="tester-import">
+          <summary>Load JSON</summary>
+          <p class="tester-lead">Paste a trigger, a list of triggers, or a full skill to fill the form.</p>
+          <textarea class="field mono" id="skill-paste" rows="8" spellcheck="false" placeholder='{ "type": "box", "phase": "late_and_beyond", "target": "layout" }'></textarea>
+          <button type="button" class="btn btn-primary" id="paste-apply">
+            <span class="material-symbols-outlined" aria-hidden="true">upload</span>
+            Load into form
+          </button>
+        </details>
       </div>
     </div>
     <footer class="site-footer">
