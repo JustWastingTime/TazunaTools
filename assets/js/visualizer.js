@@ -909,6 +909,15 @@
     state.cms = Array.isArray(cms) ? cms : [];
     state.skills = Array.isArray(skills) ? skills.filter((s) => s.skill_name) : [];
 
+    const sourceEl = document.getElementById("viz-data-source");
+    if (sourceEl) {
+      const skillSrc = Toolkino.dataSource["skill.json"];
+      const live = skillSrc === "github" || skillSrc === "jsdelivr";
+      sourceEl.textContent = live
+        ? `${state.skills.length} skills from TazunaBot GitHub.`
+        : `${state.skills.length} skills from the local copy (GitHub unavailable).`;
+    }
+
     const defaultCm = pickDefaultCm(state.cms);
     fillSelect(
       document.getElementById("cm-select"),
