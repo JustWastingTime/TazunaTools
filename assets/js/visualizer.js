@@ -157,21 +157,43 @@
     state.listOpen = false;
   }
 
+  function isGroupedPreconditions(preconditions) {
+    return Array.isArray(preconditions) && preconditions.length > 1 && preconditions.every((entry) => Array.isArray(entry));
+  }
+
+  function preconditionLines(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry) => entry != null && entry !== "" && !Array.isArray(entry));
+  }
+
+  function preconditionsForEffect(skill, effect, index) {
+    if (Array.isArray(effect?.preconditions)) return preconditionLines(effect.preconditions);
+    const shared = skill?.preconditions;
+    if (!Array.isArray(shared) || !shared.length) return [];
+    if (isGroupedPreconditions(shared)) return preconditionLines(shared[index]);
+    return preconditionLines(shared);
+  }
+
   function renderSkillCard(skill) {
     const card = document.getElementById("skill-card");
     if (!skill) {
       card.innerHTML = `<p class="muted">Select a skill or apply an activation trigger to inspect.</p>`;
       return;
     }
-    const pre = (skill.preconditions || []).map((c) => `<li>${c}</li>`).join("") || "<li>None</li>";
     const effects = (skill.effect || [])
       .map((branch, i) => {
         const conds = (branch.conditions || []).map((c) => `<li>${c}</li>`).join("") || "<li>—</li>";
+        const pres = preconditionsForEffect(skill, branch, i);
+        const preHtml = pres.length
+          ? `<h4 class="label-caps">Preconditions</h4><ul>${pres.map((c) => `<li>${c}</li>`).join("")}</ul>`
+          : "";
+        const title = (skill.effect || []).length > 1 ? `Condition ${i + 1}` : "Condition";
         return `<div class="effect-branch">
-          <h4>Branch ${i + 1}</h4>
+          <h4>${title}</h4>
+          <ul>${conds}</ul>
+          ${preHtml}
           <p>${branch.description || ""}</p>
           ${branch.inherited ? `<p class="muted mono">Inherited: ${branch.inherited}</p>` : ""}
-          <ul>${conds}</ul>
         </div>`;
       })
       .join("");
@@ -181,10 +203,8 @@
         <span class="pill">${skill.category || "skill"}</span>
       </div>
       <p>${skill.description || ""}</p>
-      <h4 class="label-caps">Preconditions</h4>
-      <ul>${pre}</ul>
       <h4 class="label-caps">Effects</h4>
-      ${effects}
+      ${effects || `<p class="muted">None</p>`}
       <pre class="mono raw-json">${JSON.stringify(skill.activation_map || {}, null, 2)}</pre>`;
   }
 
@@ -274,6 +294,7 @@
     ["first_half", "First half"],
     ["second_half", "Second half"],
     ["late_and_beyond", "Late and beyond"],
+    ["mid_and_beyond", "Mid and beyond"],
     ["final_corner_and_beyond", "Final corner and beyond"],
     ["final_corner_and_beyond,late_and_beyond", "Final corner and late and beyond"],
   ];

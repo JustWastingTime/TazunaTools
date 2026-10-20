@@ -177,20 +177,39 @@
     return lower(segment?.label).includes("corner");
   }
 
+  function isUphillSegment(segment) {
+    const label = lower(segment?.label);
+    const type = lower(segment?.type);
+    return type === "uphill" || label.includes("uphill");
+  }
+
   function layoutSegmentMatches(segment, match) {
     const normalizedMatch = lower(match);
     if (!normalizedMatch) return true;
     if (normalizedMatch === "not_a_corner" || normalizedMatch === "not_corner" || normalizedMatch === "not corner") {
       return !isLayoutCornerSegment(segment);
     }
+    if (normalizedMatch === "not_uphill" || normalizedMatch === "not uphill" || normalizedMatch === "not_an_uphill" || normalizedMatch === "not an uphill") {
+      return !isUphillSegment(segment);
+    }
+    if (normalizedMatch === "uphill") return isUphillSegment(segment);
     return lower(segment?.label).includes(normalizedMatch);
+  }
+
+  function flattenConditionSources(values, out = []) {
+    for (const value of values ?? []) {
+      if (Array.isArray(value)) flattenConditionSources(value, out);
+      else if (value != null && value !== "") out.push(value);
+    }
+    return out;
   }
 
   function collectSkillConditionText(skill, includeDescriptions = false) {
     const sources = [];
-    if (Array.isArray(skill.preconditions)) sources.push(...skill.preconditions);
+    if (Array.isArray(skill.preconditions)) sources.push(...flattenConditionSources(skill.preconditions));
     if (Array.isArray(skill.effect)) {
       for (const effect of skill.effect) {
+        if (Array.isArray(effect.preconditions)) sources.push(...flattenConditionSources(effect.preconditions));
         if (Array.isArray(effect.conditions)) sources.push(...effect.conditions);
         if (includeDescriptions && effect.description) sources.push(effect.description);
       }
@@ -199,8 +218,12 @@
     return sources.map((v) => lower(v)).filter(Boolean);
   }
 
-  function pushUniqueBox(markers, start, end, color = "#d11f2a", triggerBehavior) {
-    const exists = markers.some(
+  function unionNumbers(left, right) {
+    return [...new Set([...(left ?? []), ...(right ?? [])])].filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+  }
+
+  function pushUniqueBox(markers, start, end, color = "#d11f2a", triggerBehavior, meta = {}) {
+    const exists = markers.find(
       (m) =>
         m.type === "box" &&
         m.start === start &&
@@ -208,11 +231,20 @@
         (m.color ?? "#d11f2a") === (color ?? "#d11f2a") &&
         (m.trigger_behavior ?? "") === (triggerBehavior ?? "")
     );
-    if (!exists) {
-      const marker = { type: "box", start, end, color, fillOpacity: 0.16 };
-      if (triggerBehavior) marker.trigger_behavior = triggerBehavior;
-      markers.push(marker);
+    if (exists) {
+      exists.effects = unionNumbers(exists.effects, meta.effects);
+      exists.requires = unionNumbers(exists.requires, meta.requires);
+      if (meta.preconditionForAll) exists.preconditionForAll = true;
+      if (meta.requireActivation) exists.requireActivation = true;
+      return;
     }
+    const marker = { type: "box", start, end, color, fillOpacity: 0.16 };
+    if (triggerBehavior) marker.trigger_behavior = triggerBehavior;
+    if (meta.effects?.length) marker.effects = [...meta.effects];
+    if (meta.requires?.length) marker.requires = [...meta.requires];
+    if (meta.preconditionForAll) marker.preconditionForAll = true;
+    if (meta.requireActivation) marker.requireActivation = true;
+    markers.push(marker);
   }
 
   function pushUniqueLine(markers, distance, color = "#d11f2a") {
@@ -247,6 +279,10 @@
     if (phase === "first_half") return { start: 0, end: mapData.length * 0.5 };
     if (phase === "late_and_beyond") {
       const start = lateZone?.start ?? spurtZone?.start ?? mapData.length * 0.75;
+      return { start, end: mapData.length };
+    }
+    if (phase === "mid_and_beyond") {
+      const start = midZone?.start ?? mapData.length * 0.5;
       return { start, end: mapData.length };
     }
     if (phase === "final_corner_and_beyond") {
@@ -428,14 +464,232 @@
     return markers;
   }
 
+  const TRIGGER_COURSE_GATES = [
+    { keys: ["distance_types", "distanceTypes"], courseKey: "distanceType", reason: "distance type mismatch" },
+    { keys: ["terrains", "terrain"], courseKey: "terrain", reason: "terrain mismatch" },
+    { keys: ["directions", "direction"], courseKey: "direction", reason: "direction mismatch", normalize: normalizeDirection },
+    { keys: ["racetracks", "racetrack"], courseKey: "racetrack", reason: "racetrack mismatch" },
+    { keys: ["grounds", "ground"], courseKey: "ground", reason: "ground mismatch" },
+    { keys: ["seasons", "season"], courseKey: "season", reason: "season mismatch" },
+    { keys: ["weathers", "weather"], courseKey: "weather", reason: "weather mismatch" },
+  ];
+  const TRIGGER_COURSE_EXCLUSIONS = [
+    { keys: ["exclude_racetracks", "exclude_racetrack"], courseKey: "racetrack", reason: "racetrack mismatch" },
+  ];
+
+  function triggerAllowList(trigger, gate) {
+    for (const key of gate.keys) {
+      const raw = trigger?.[key];
+      const values = Array.isArray(raw) ? raw : typeof raw === "string" && raw.trim() ? [raw] : null;
+      if (!values || !values.length) continue;
+      return new Set(
+        values.map((value) => {
+          const normalized = gate.normalize ? gate.normalize(value) : value;
+          return lower(normalized);
+        })
+      );
+    }
+    return null;
+  }
+
+  function triggerHasCourseGate(trigger) {
+    return (
+      TRIGGER_COURSE_GATES.some((gate) => triggerAllowList(trigger, gate)) ||
+      TRIGGER_COURSE_EXCLUSIONS.some((gate) => triggerAllowList(trigger, gate))
+    );
+  }
+
+  function triggerCourseMismatches(trigger, course) {
+    const reasons = [];
+    for (const gate of TRIGGER_COURSE_GATES) {
+      const allowed = triggerAllowList(trigger, gate);
+      if (!allowed) continue;
+      const raw = course?.[gate.courseKey];
+      const value = lower(gate.normalize ? gate.normalize(raw) : raw);
+      if (!value || !allowed.has(value)) reasons.push(gate.reason);
+    }
+    for (const gate of TRIGGER_COURSE_EXCLUSIONS) {
+      const blocked = triggerAllowList(trigger, gate);
+      if (!blocked) continue;
+      const raw = course?.[gate.courseKey];
+      const value = lower(raw);
+      if (value && blocked.has(value)) reasons.push(gate.reason);
+    }
+    return reasons;
+  }
+
+  function triggerMatchesCourse(trigger, course) {
+    return triggerCourseMismatches(trigger, course).length === 0;
+  }
+
+  function courseContextFromCm(cm) {
+    return {
+      distanceType: lower(cm?.track?.distance_type ?? inferDistanceTypeFromMeters(cm?.track?.distance_meters)),
+      terrain: lower(cm?.track?.terrain),
+      direction: lower(normalizeDirection(cm?.track?.direction)),
+      racetrack: lower(cm?.track?.racetrack),
+      ground: lower(cm?.track?.ground),
+      season: lower(cm?.track?.season),
+      weather: lower(cm?.track?.weather),
+    };
+  }
+
+  function triggerBehaviorName(trigger) {
+    return lower(trigger?.trigger_behavior ?? trigger?.behavior);
+  }
+
+  function isPreconditionTrigger(trigger) {
+    return triggerBehaviorName(trigger) === "precondition";
+  }
+
+  function effectNumbersFrom(value) {
+    const raw = Array.isArray(value) ? value : value == null || value === "" ? [] : [value];
+    const numbers = raw.map((item) => Number(item)).filter((item) => Number.isFinite(item) && item > 0);
+    return numbers.length ? numbers : null;
+  }
+
+  function activationEffectNumbers(trigger) {
+    return effectNumbersFrom(trigger?.effect ?? trigger?.effects) ?? [];
+  }
+
+  function preconditionEffectNumbers(trigger) {
+    const explicit = trigger?.effects ?? trigger?.for_effects ?? trigger?.for;
+    if (explicit == null) return null;
+    return effectNumbersFrom(explicit) ?? [];
+  }
+
+  function requiresEffectNumbers(trigger) {
+    return effectNumbersFrom(trigger?.requires ?? trigger?.requires_effects) ?? [];
+  }
+
+  function prepareActivationTriggers(triggers, course) {
+    const copies = triggers.map((trigger) => ({ ...trigger }));
+    const explicitTaken = new Set();
+    for (const trigger of copies) {
+      if (isPreconditionTrigger(trigger)) continue;
+      for (const number of activationEffectNumbers(trigger)) explicitTaken.add(number);
+    }
+
+    let auto = 1;
+    const seen = new Set();
+    const activationEffects = [];
+    for (const trigger of copies) {
+      if (isPreconditionTrigger(trigger)) continue;
+      const explicit = activationEffectNumbers(trigger);
+      if (explicit.length) {
+        trigger._effects = explicit;
+      } else {
+        while (explicitTaken.has(auto)) auto += 1;
+        trigger._effects = [auto];
+        explicitTaken.add(auto);
+        auto += 1;
+      }
+      trigger._requires = requiresEffectNumbers(trigger);
+      for (const number of trigger._effects) {
+        if (seen.has(number)) continue;
+        seen.add(number);
+        activationEffects.push(number);
+      }
+    }
+    activationEffects.sort((a, b) => a - b);
+
+    const hasActivation = copies.some((trigger) => !isPreconditionTrigger(trigger));
+    for (const trigger of copies) {
+      trigger._courseOk = !course || triggerMatchesCourse(trigger, course);
+      if (!isPreconditionTrigger(trigger)) continue;
+      const explicit = preconditionEffectNumbers(trigger);
+      trigger._preconditionForAll = explicit == null;
+      trigger._effects = explicit ?? [...activationEffects];
+    }
+
+    const activeEffects = new Set();
+    for (const trigger of copies) {
+      if (isPreconditionTrigger(trigger) || !trigger._courseOk) continue;
+      for (const number of trigger._effects) activeEffects.add(number);
+    }
+    for (const trigger of copies) {
+      if (!isPreconditionTrigger(trigger)) {
+        trigger._active = trigger._courseOk;
+        continue;
+      }
+      if (!hasActivation) {
+        trigger._active = trigger._courseOk;
+        continue;
+      }
+      const linkedActive = (trigger._effects ?? []).filter((number) => activeEffects.has(number));
+      trigger._active = trigger._courseOk && linkedActive.length > 0;
+      if (!trigger._preconditionForAll) trigger._effects = linkedActive;
+    }
+
+    const numberLabels = activationEffects.length > 1 || copies.some((trigger) => trigger._requires?.length);
+    return { triggers: copies, activationEffects, numberLabels };
+  }
+
+  function behaviorWord(behavior) {
+    const name = lower(behavior);
+    if (name === "asap") return "ASAP";
+    if (name === "precondition") return "PRECONDITION";
+    return "RANDOM";
+  }
+
+  function annotateActivationLabels(markers, { numberLabels, activationEffects }) {
+    const all = new Set(activationEffects ?? []);
+    for (const marker of markers) {
+      if (marker.type !== "box") continue;
+      const word = behaviorWord(marker.trigger_behavior);
+      const effects = unionNumbers(marker.effects, []);
+      const isPrecondition = lower(marker.trigger_behavior) === "precondition";
+      const coversAll =
+        isPrecondition &&
+        (marker.preconditionForAll || (all.size > 0 && effects.length === all.size && effects.every((number) => all.has(number))));
+      let label = word;
+      if (numberLabels && effects.length && !coversAll) label = `${word} ${effects.join(", ")}`;
+      if (marker.requires?.length) label += ` (after ${marker.requires.join(", ")})`;
+      marker.label = label;
+    }
+  }
+
   function markersFromActivationMap(skill, mapData, options = {}) {
     const activationMap = skill?.activation_map;
     if (!activationMap || !Array.isArray(activationMap.triggers)) return [];
     const markers = [];
     const allowAutoPhaseInference = options.allowAutoPhaseInference !== false;
     const autoPhaseWindow = allowAutoPhaseInference ? inferAutoPhaseWindow(skill, mapData) : null;
+    const prepared = prepareActivationTriggers(activationMap.triggers, options.course);
+    const orderedTriggers = [...prepared.triggers].sort((a, b) => {
+      const aPre = isPreconditionTrigger(a) ? 0 : 1;
+      const bPre = isPreconditionTrigger(b) ? 0 : 1;
+      if (aPre !== bPre) return aPre - bPre;
+      const aEffect = Math.min(...(a._effects?.length ? a._effects : [Number.MAX_SAFE_INTEGER]));
+      const bEffect = Math.min(...(b._effects?.length ? b._effects : [Number.MAX_SAFE_INTEGER]));
+      return aEffect - bEffect;
+    });
 
-    for (const trigger of activationMap.triggers) {
+    for (const trigger of orderedTriggers) {
+      if (!trigger._active) continue;
+      if (trigger.requires_precondition === true) {
+        const wanted = new Set(trigger._effects ?? []);
+        const ready = markers.some(
+          (marker) =>
+            marker.type === "box" &&
+            lower(marker.trigger_behavior) === "precondition" &&
+            (marker.effects ?? []).some((number) => wanted.has(number))
+        );
+        if (!ready) continue;
+      }
+      const unlessEffects = effectNumbersFrom(trigger.unless_effect ?? trigger.unless_effects) ?? [];
+      if (
+        unlessEffects.some((number) =>
+          markers.some(
+            (marker) =>
+              marker.type === "box" &&
+              lower(marker.trigger_behavior) !== "precondition" &&
+              (marker.effects ?? []).includes(number)
+          )
+        )
+      ) {
+        continue;
+      }
       const color = trigger.color ?? "#d11f2a";
       if (trigger.type === "line") {
         if (Number.isFinite(Number(trigger.distance))) {
@@ -475,6 +729,12 @@
       if (trigger.type !== "box") continue;
 
       const triggerBehavior = trigger.trigger_behavior ?? trigger.behavior;
+      const boxMeta = {
+        effects: trigger._effects,
+        requires: trigger._requires,
+        preconditionForAll: trigger._preconditionForAll,
+        requireActivation: trigger.require_activation === true,
+      };
       const ratioStart = Number(trigger.clip_start_ratio ?? trigger.start_ratio);
       const ratioEnd = Number(trigger.clip_end_ratio ?? trigger.end_ratio);
       const absoluteStart = Number(trigger.clip_start ?? trigger.start_m ?? trigger.range_start);
@@ -503,11 +763,20 @@
         clipStart = Math.max(clipStart, autoPhaseWindow.start);
         clipEnd = Math.min(clipEnd, autoPhaseWindow.end);
       }
+      if (trigger.after_precondition_start === true) {
+        const wanted = new Set(trigger._effects ?? []);
+        const preconditionStarts = markers
+          .filter((marker) => marker.type === "box" && lower(marker.trigger_behavior) === "precondition")
+          .filter((marker) => (marker.effects ?? []).some((number) => wanted.has(number)))
+          .map((marker) => marker.start);
+        if (!preconditionStarts.length) continue;
+        clipStart = Math.max(clipStart, Math.min(...preconditionStarts));
+      }
 
       const pushClippedBox = (start, end) => {
         const clippedStart = Math.max(start, clipStart);
         const clippedEnd = Math.min(end, clipEnd);
-        if (clippedEnd > clippedStart) pushUniqueBox(markers, clippedStart, clippedEnd, color, triggerBehavior);
+        if (clippedEnd > clippedStart) pushUniqueBox(markers, clippedStart, clippedEnd, color, triggerBehavior, boxMeta);
       };
 
       const directRangeMode = lower(trigger.distance_mode ?? trigger.distanceMode ?? "absolute");
@@ -523,11 +792,19 @@
           trigger.remaining_end ??
           trigger.value
       );
+      const selectsSegments = Boolean(trigger.target || trigger.match || (Array.isArray(trigger.labels) && trigger.labels.length));
       if (Number.isFinite(rawStart) && Number.isFinite(rawEnd)) {
         const startDistance = directRangeMode === "remaining" ? mapData.length - rawStart : rawStart;
         const endDistance = directRangeMode === "remaining" ? mapData.length - rawEnd : rawEnd;
-        pushClippedBox(Math.min(startDistance, endDistance), Math.max(startDistance, endDistance));
-        continue;
+        const normalizedStart = Math.min(startDistance, endDistance);
+        const normalizedEnd = Math.max(startDistance, endDistance);
+        if (!selectsSegments) {
+          pushClippedBox(normalizedStart, normalizedEnd);
+          continue;
+        }
+        clipStart = Math.max(clipStart, normalizedStart);
+        clipEnd = Math.min(clipEnd, normalizedEnd);
+        if (clipEnd <= clipStart) continue;
       }
 
       const target = lower(trigger.target ?? "layout");
@@ -605,7 +882,7 @@
       }
 
       if (autoPhaseWindow?.forceFullRange && filteredSegments.length > 0 && useAutoPhaseClip && !hasExplicitSelection) {
-        pushUniqueBox(markers, clipStart, clipEnd, color, triggerBehavior);
+        pushUniqueBox(markers, clipStart, clipEnd, color, triggerBehavior, boxMeta);
         continue;
       }
 
@@ -624,6 +901,20 @@
         pushClippedBox(localStart, localEnd);
       }
     }
+
+    const activatedEffects = new Set();
+    for (const marker of markers) {
+      if (marker.type !== "box" || lower(marker.trigger_behavior) === "precondition") continue;
+      for (const effect of marker.effects ?? []) activatedEffects.add(effect);
+    }
+    for (let index = markers.length - 1; index >= 0; index--) {
+      const marker = markers[index];
+      if (!marker.requireActivation) continue;
+      const effects = marker.effects ?? [];
+      if (!effects.some((effect) => activatedEffects.has(effect))) markers.splice(index, 1);
+    }
+
+    annotateActivationLabels(markers, prepared);
     return markers;
   }
 
@@ -685,35 +976,43 @@
     }
     const activationMap = skill.activation_map;
     const hasActivationMapConfig = Boolean(activationMap && typeof activationMap === "object");
-    const explicitRequirements = requirementsFromActivationMap(activationMap);
     const fallbackRequirements = hasActivationMapConfig ? null : inferTextTrackRequirements(skill);
-    const requirements = explicitRequirements ?? fallbackRequirements;
-    const compatibility = evaluateTrackCompatibility(cm?.track, requirements);
+    const compatibility = evaluateTrackCompatibility(cm?.track, fallbackRequirements);
     const hasExplicitActivationMap = Boolean(activationMap && Array.isArray(activationMap.triggers));
-    const explicitMarkers = hasExplicitActivationMap
+    const course = courseContextFromCm(cm);
+    const markerOptions = { allowAutoPhaseInference: false, course };
+    const explicitMarkers = hasExplicitActivationMap ? markersFromActivationMap(skill, mapData, markerOptions) : [];
+    const unfilteredMarkers = hasExplicitActivationMap
       ? markersFromActivationMap(skill, mapData, { allowAutoPhaseInference: false })
       : [];
-    const markers = hasExplicitActivationMap
-      ? explicitMarkers
-      : hasActivationMapConfig
-        ? []
-        : inferSkillMarkers(skill, mapData);
+    const triggers = hasExplicitActivationMap ? activationMap.triggers : [];
+    const courseMismatches = [...new Set(triggers.flatMap((trigger) => triggerCourseMismatches(trigger, course)))];
+    const hasCourseGate = triggers.some((trigger) => triggerHasCourseGate(trigger));
+    const anyCourseMatch = triggers.some((trigger) => triggerMatchesCourse(trigger, course));
+    const courseBlocked = hasCourseGate && !anyCourseMatch && unfilteredMarkers.length > 0;
+    const markers = hasExplicitActivationMap ? explicitMarkers : hasActivationMapConfig ? [] : inferSkillMarkers(skill, mapData);
     const rawConditionTexts = collectSkillConditionText(skill, false);
     const isRandomPointSkill = rawConditionTexts.some((text) => text.includes("random point"));
     const defaultBehavior = isRandomPointSkill ? "random" : "asap";
     const normalizedMarkers = markers.map((marker) =>
       marker.type === "box" && !marker.trigger_behavior ? { ...marker, trigger_behavior: defaultBehavior } : marker
     );
-    const hasActivationWindow = markers.length > 0;
+    const hasActivationWindow = (hasExplicitActivationMap ? unfilteredMarkers : markers).length > 0;
+    const explicitShow = activationMap?.show_chart;
 
-    if (compatibility.doesNotWork) {
+    if (compatibility.doesNotWork || courseBlocked) {
       if (!hasActivationWindow) {
         return { shouldShowChart: false, markers: [], doesNotWork: false, reasons: [], usedActivationMap: Boolean(activationMap) };
       }
-      return { shouldShowChart: true, markers: [], doesNotWork: true, reasons: compatibility.reasons, usedActivationMap: Boolean(activationMap) };
+      return {
+        shouldShowChart: true,
+        markers: [],
+        doesNotWork: true,
+        reasons: courseBlocked ? courseMismatches : compatibility.reasons,
+        usedActivationMap: Boolean(activationMap),
+      };
     }
 
-    const explicitShow = activationMap?.show_chart;
     const shouldShowChart = explicitShow === false ? false : explicitShow === true ? true : hasActivationWindow;
     return {
       shouldShowChart,
@@ -743,7 +1042,9 @@
       const markerColor = marker?.color ?? COLORS.activationBoxStroke;
       const prevBehavior = String(prev?.trigger_behavior ?? prev?.behavior ?? "random").toLowerCase();
       const markerBehavior = String(marker?.trigger_behavior ?? marker?.behavior ?? "random").toLowerCase();
-      const sameStyle = prev && prevColor === markerColor && prevBehavior === markerBehavior;
+      const prevLabel = String(prev?.label ?? "");
+      const markerLabel = String(marker?.label ?? "");
+      const sameStyle = prev && prevColor === markerColor && prevBehavior === markerBehavior && prevLabel === markerLabel;
       if (prev && sameStyle && marker.start <= prev.end + tolerance) {
         prev.end = Math.max(prev.end, marker.end);
         prev.fillOpacity = Math.max(Number(prev.fillOpacity ?? 0.1), Number(marker.fillOpacity ?? 0.1));
@@ -926,25 +1227,27 @@
         const x = xFrom(start);
         const w = xFrom(end) - x;
         const behavior = String(marker.trigger_behavior ?? marker.behavior ?? "random").toLowerCase();
+        const caption =
+          marker.label || (behavior === "asap" ? "ASAP" : behavior === "precondition" ? "PRECONDITION" : "RANDOM");
         const boxY = trackTop - 12;
         const boxH = rowBottom - trackTop + 24;
         if (behavior === "asap") {
           parts.push(
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="${marker.color || COLORS.activationBoxStroke}" fill-opacity="0.08" stroke="none"/>`,
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="url(#asapHatch)" fill-opacity="0.4" stroke="${marker.color || COLORS.activationBoxStroke}" stroke-width="2.4"/>`,
-            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#ff7f97" font-size="12" font-family="${FONT}" font-weight="700">ASAP</text>`
+            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#ff7f97" font-size="12" font-family="${FONT}" font-weight="700">${escapeXml(caption)}</text>`
           );
         } else if (behavior === "precondition") {
           parts.push(
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="#f7e6a4" fill-opacity="0.2" stroke="none"/>`,
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="url(#preconditionHatch)" fill-opacity="0.45" stroke="#d9b84a" stroke-width="2"/>`,
-            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#e5c767" font-size="12" font-family="${FONT}" font-weight="700">PRECONDITION</text>`
+            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#e5c767" font-size="12" font-family="${FONT}" font-weight="700">${escapeXml(caption)}</text>`
           );
         } else {
           parts.push(
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="#bfdcff" fill-opacity="0.24" stroke="none"/>`,
             `<rect x="${x.toFixed(2)}" y="${boxY}" width="${w.toFixed(2)}" height="${boxH}" rx="4" fill="url(#randomStripe)" fill-opacity="0.55" stroke="#4f88d4" stroke-width="2"/>`,
-            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#5f98e3" font-size="12" font-family="${FONT}" font-weight="700">RANDOM</text>`
+            `<text x="${(x + w / 2).toFixed(2)}" y="${boxY - 6}" text-anchor="middle" fill="#5f98e3" font-size="12" font-family="${FONT}" font-weight="700">${escapeXml(caption)}</text>`
           );
         }
         continue;
